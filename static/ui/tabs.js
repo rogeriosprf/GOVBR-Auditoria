@@ -1,49 +1,80 @@
+// static/ui/tabs.js (ou onde você tem setupTabs)
 export function setupTabs() {
-  const homeTab = document.getElementById('tab-home')
-  const cardsTab = document.getElementById('tab-cards')
-  const tabTitle = document.getElementById('tab-title')
-  const tabDesc = document.getElementById('tab-desc')
+  const title = document.getElementById('tab-title');
+  const desc = document.getElementById('tab-desc');
 
-  document.getElementById('btn-home').onclick = () => {
-    homeTab.classList.remove('hidden')
-    cardsTab.classList.add('hidden')
-    // ensure other tabs are hidden
-    document.getElementById('tab-dashboard')?.classList.add('hidden')
-    document.getElementById('tab-settings')?.classList.add('hidden')
-    tabTitle.innerText = 'Home'
-    tabDesc.innerText = 'Visão Geral'
+  const tabs = {
+    home: {
+      button: 'btn-home',
+      section: 'tab-home',
+      title: 'Home',
+      desc: 'Visão Geral'
+    },
+    cards: {
+      button: 'btn-cards',
+      section: 'tab-cards',
+      title: 'Auditorias',
+      desc: 'Triagem de Casos'
+    },
+    dashboard: {
+      button: 'btn-dashboard',
+      section: 'tab-dashboard',
+      title: 'Dashboard',
+      desc: 'Métricas e ranking',
+      onShow: () => window.loadDashboard?.()
+    },
+    settings: {
+      button: 'btn-settings',
+      section: 'tab-settings',
+      title: 'Configurações',
+      desc: 'Ajustes do sistema',
+      onShow: () => window.loadSettings?.()
+    }
+  };
+
+  // Todas as sections
+  const sections = Object.values(tabs).map(t => document.getElementById(t.section)).filter(Boolean);
+
+  // Todos os botões da sidebar
+  const buttons = Object.values(tabs).map(t => document.getElementById(t.button)).filter(Boolean);
+
+  function hideAll() {
+    sections.forEach(sec => sec.classList.add('hidden'));
+    buttons.forEach(btn => {
+      btn.classList.remove('text-blue-600', 'bg-blue-50');
+      btn.classList.add('text-slate-300');
+    });
   }
 
-  document.getElementById('btn-cards').onclick = () => {
-    homeTab.classList.add('hidden')
-    cardsTab.classList.remove('hidden')
-    // hide dashboard & settings when showing cards
-    document.getElementById('tab-dashboard')?.classList.add('hidden')
-    document.getElementById('tab-settings')?.classList.add('hidden')
-    tabTitle.innerText = 'Auditorias'
-    tabDesc.innerText = 'Triagem de Casos'
+  function showTab(key) {
+    const tab = tabs[key];
+    if (!tab) return;
+
+    hideAll();
+
+    const section = document.getElementById(tab.section);
+    const button = document.getElementById(tab.button);
+
+    if (section) section.classList.remove('hidden');
+    if (button) {
+      button.classList.remove('text-slate-300');
+      button.classList.add('text-blue-600', 'bg-blue-50');
+    }
+
+    if (title) title.innerText = tab.title;
+    if (desc) desc.innerText = tab.desc;
+
+    tab.onShow?.();
   }
 
-  document.getElementById('btn-dashboard').onclick = () => {
-    homeTab.classList.add('hidden')
-    cardsTab.classList.add('hidden')
-    // hide settings in case it was previously open
-    document.getElementById('tab-settings')?.classList.add('hidden')
-    const dash = document.getElementById('tab-dashboard')
-    if (dash) dash.classList.remove('hidden')
-    tabTitle.innerText = 'Dashboard'
-    tabDesc.innerText = 'Métricas e ranking'
-    if (window.loadDashboard) window.loadDashboard()
-  }
+  // Bind nos botões
+  Object.entries(tabs).forEach(([key, tab]) => {
+    const btn = document.getElementById(tab.button);
+    if (btn) {
+      btn.addEventListener('click', () => showTab(key));
+    }
+  });
 
-  document.getElementById('btn-settings').onclick = () => {
-    homeTab.classList.add('hidden')
-    cardsTab.classList.add('hidden')
-    document.getElementById('tab-dashboard')?.classList.add('hidden')
-    const settings = document.getElementById('tab-settings')
-    if (settings) settings.classList.remove('hidden')
-    tabTitle.innerText = 'Configurações'
-    tabDesc.innerText = 'Ajustes do sistema'
-    if (window.loadSettings) window.loadSettings()
-  }
+  // Estado inicial: Home ativo
+  showTab('home');
 }

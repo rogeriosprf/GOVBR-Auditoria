@@ -1,8 +1,5 @@
-export const State = {
-  cards: [],
-  filtros: {
-    texto: '',
-    risco: 'all',
-    status: 'all'
-  }
-}
+import { Store } from './store.js';
+
+// Re-export the primary Store implementation for backwards compatibility
+export { Store as Store };
+

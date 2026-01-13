@@ -1,0 +1,199 @@
+/* ================================================================
+   1. VARIÁVEIS E BASE
+   ================================================================ */
+:root {
+  --primary: #3b82f6;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f97316;
+  --slate-200: #e2e8f0;
+  --overlay-bg: rgba(15, 23, 42, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  color: #0f172a;
+}
+
+/* ================================================================
+   2. OVERLAY (FUNDO ESCURECIDO)
+   ================================================================ */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(6px);
+
+  /* abaixo do modal, acima do app */
+  z-index: 1100;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s;
+}
+
+#overlay.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ================================================================
+   3. PAINEL CENTRAL (AJUSTADO PARA ENCOSTAR NA NAV)
+   ================================================================ */
+#card-panel {
+  position: fixed;
+  top: 56px; /* Ajuste de 68px para 56px para encostar na Nav */
+  bottom: 0;
+
+  /* Alinhamento perfeito com sidebar (w-14) e chat (w-80) */
+  left: 3.5rem;   
+  right: 20rem;   
+
+  background: #ffffff;
+  z-index: 1200;
+
+  border-left: 1px solid var(--slate-200);
+  /* Removi o border-right para não "bater" na borda do chat */
+
+  /* Sombra sutil apenas para dar profundidade sobre a lista de cards */
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Estado inicial (fechado) */
+  transform: translateY(100%);
+  visibility: hidden;
+
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.45s;
+}
+
+/* Garante que o painel suma quando não estiver ativo */
+#card-panel.hidden {
+  display: none !important;
+}
+
+/* ABERTO */
+#card-panel.show {
+  transform: translateY(0);
+  visibility: visible;
+  display: flex !important; /* Força o flex quando ativo */
+}
+
+/* ================================================================
+   4. GRID DE CARDS (FLUIDO, SEM SURPRESA)
+   ================================================================ */
+#cards-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.card-compact-ui {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--slate-200);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card-compact-ui:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 24px -10px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
+}
+
+/* ================================================================
+   4.1 INDICADORES DE RISCO
+   ================================================================ */
+.dot-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.dot-ALTO {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+
+.dot-MEDIO {
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
+}
+
+.dot-BAIXO {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+/* ================================================================
+   5. CHAT E ANIMAÇÕES
+   ================================================================ */
+.chat-bubble {
+  animation: slideUp 0.3s ease-out forwards;
+  border-radius: 1.25rem;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================================
+   6. SCROLLBAR CUSTOMIZADA
+   ================================================================ */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ================================================================
+   7. CONTROLE DE ABAS
+   ================================================================ */
+.tab-content.hidden {
+  display: none !important;
+}

@@ -1,0 +1,8 @@
+export const Actions = {
+  SET_CARDS: 'SET_CARDS',
+  OPEN_MODAL: 'OPEN_MODAL',
+  CLOSE_MODAL: 'CLOSE_MODAL',
+
+  SET_STATS: 'SET_STATS',
+  SET_FILTRO: 'SET_FILTRO'
+};

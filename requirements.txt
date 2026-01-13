@@ -1,9 +1,11 @@
-fastapi
-uvicorn
-psycopg2-binary
-pgvector
-sentence-transformers
-groq
-polars
+fastapi>=0.110
+uvicorn[standard]>=0.29
+psycopg2-binary>=2.9
+pgvector>=0.2
+sentence-transformers>=2.7
+groq>=0.9
+polars>=1.0
 python-multipart
 python-dotenv
+pydantic>=2.7
+pydantic-settings>=2.2  # novo: melhor que dotenv puro

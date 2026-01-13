@@ -1,356 +1,603 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
+  <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIAV | Auditoria Digital</title>
 
-  <!-- Tailwind -->
+  <!-- libs -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- app css -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  <body class="h-screen flex flex-col overflow-hidden bg-slate-50 text-slate-800">
 
-    body {
-      font-family: 'Inter', sans-serif;
-      letter-spacing: -0.01em;
-      font-size: 12px;
-      background-color: #fcfdfe;
-    }
+    <!-- NAV BAR -->
+    <nav class="h-[56px] bg-[#0f172a] text-white px-8 py-3 flex items-center justify-between shadow-2xl relative z-50">
 
-    .tab-content {
-      animation: fadeIn 0.2s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .card-compact-ui {
-      background: white;
-      padding: 1rem;
-      border-radius: 1rem;
-      border: 1px solid #f1f5f9;
-      transition: all 0.2s;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 10.5rem;
-      position: relative;
-    }
-
-    .card-compact-ui:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.05);
-    }
-
-    .audit-badge {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      background: #10b981;
-      color: white;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 10;
-    }
-
-    .dot-status {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 5px;
-    }
-
-    /* Make the dot more visible inside the compact card */
-    .card-compact-ui .dot-status {
-      width: 12px;
-      height: 12px;
-      margin-right: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.06);
-    }
-
-    .dot-ALTO { background: #ef4444; box-shadow: 0 0 14px rgba(239,68,68,0.45); border: 2px solid rgba(239,68,68,0.12); }
-    .dot-MÉDIO { background: #f97316; box-shadow: 0 0 14px rgba(249,115,22,0.45); border: 2px solid rgba(249,115,22,0.12); }
-    .dot-BAIXO { background: #f59e0b; box-shadow: 0 0 14px rgba(245,158,11,0.45); border: 2px solid rgba(245,158,11,0.12); }
-
-    /* criticidade badge (text pill) */
-    .criticidade-badge { font-size: 10px; padding: 3px 8px; border-radius: 9999px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-left: 6px; }
-    .criticidade-badge.ALTO { background: rgba(239,68,68,0.08); color: #ef4444; }
-    .criticidade-badge.MEDIO { background: rgba(249,115,22,0.08); color: #f97316; }
-    .criticidade-badge.MÉDIO { background: rgba(249,115,22,0.08); color: #f97316; }
-    .criticidade-badge.BAIXO { background: rgba(245,158,11,0.08); color: #b45309; }
-
-    #chat-window::-webkit-scrollbar { width: 4px; }
-    #chat-window::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
-    /* Floating centered panel */
-    #card-panel {
-      width: 60%;
-      max-width: 720px;
-      min-width: 320px;
-      max-height: 80vh;
-      position: fixed;
-      /* Shift the panel left by half the chat width (10rem) so it's centered in the main area */
-      left: calc(50% - 10rem);
-      top: 50%;
-      transform: translate(-50%, -50%) scale(0.98);
-      opacity: 0;
-      background: white;
-      border-radius: 1rem;
-      border: 1px solid #e2e8f0;
-      z-index: 50;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 10px 30px rgba(2,6,23,0.12);
-      overflow: hidden;
-      /* Accessibility / interaction: when hidden the panel should not capture events */
-      pointer-events: none;
-      visibility: hidden;
-    }
-
-    #card-panel.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; visibility: visible; }
-
-    /* Overlay that excludes the chat area (right side) so chat stays interactive */
-    #overlay {
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 20rem; /* leave room for the fixed chat (w-80) */
-      background: rgba(0,0,0,0.35);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-      z-index: 40;
-    }
-    #overlay.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    @media (max-width: 900px) {
-      #overlay { right: 0; }
-      #card-panel { width: 90%; min-width: 260px; left: 50%; }
-    }
-
-    main { flex: 1; transition: margin-left 0.3s; }
-  </style>
-</head>
-
-<body class="h-screen flex flex-col overflow-hidden text-slate-800">
-
-  <!-- TOP NAV -->
-  <nav class="bg-slate-900 text-white px-6 py-3 flex items-center z-20 shadow-md">
-    <div class="w-1/4">
-      <div class="bg-blue-600 w-8 h-8 flex items-center justify-center rounded-lg">
-        <i class="fas fa-fingerprint text-xs"></i>
-      </div>
+  <div class="w-1/4 flex items-center gap-3">
+    <div class="bg-blue-600 w-8 h-8 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/40">
+      <i class="fas fa-fingerprint text-[12px]"></i>
     </div>
-    <div class="flex-1 text-center font-extrabold tracking-widest uppercase">SIAV</div>
-    <div class="w-1/4 flex justify-end gap-4 text-[9px] font-bold text-white/40 items-center">
-      <div class="text-right">
-        <span class="block font-bold">LLAMA 3.3 <span id="llama-status" class="text-green-400 font-normal">ATIVO</span></span>
-        <span id="system-version" class="block text-[10px] text-white/50">v—</span>
-      </div>
-      <div class="text-right">
-        <span class="block">Status: <span id="system-status-value" class="text-green-400 font-bold">ok</span></span>
-        <span class="block text-[10px]">DB: <span id="api-db" class="text-green-400">—</span> • Groq: <span id="api-groq" class="text-green-400">—</span></span>
-      </div>
+    <div class="flex flex-col leading-none">
+      <span class="font-black tracking-[0.2em] text-sm">SIAV</span>
+      <span class="text-[7px] font-mono text-blue-400 uppercase tracking-widest">Digital Audit</span>
     </div>
-  </nav>
+  </div>
 
-  <div class="flex-1 flex overflow-hidden relative">
+  <div class="flex-1 flex items-center justify-center">
+    <div class="flex items-center gap-3">
+      <span class="font-light tracking-[0.3em] text-lg text-white/90">SIAV</span>
+      <span class="w-[1px] h-4 bg-slate-700"></span>
+      <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100/50">
+        Sistema Inteligente de Auditoria de Viagens
+      </span>
+    </div>
+  </div>
 
-    <!-- SIDEBAR -->
-    <aside class="w-14 bg-white border-r border-slate-100 flex flex-col items-center py-6 gap-6 z-30">
-      <button id="btn-home" class="transition-colors text-slate-300 hover:text-slate-700">
-        <i class="fas fa-home text-base"></i>
-      </button>
-      <button id="btn-cards" class="transition-colors text-slate-300 hover:text-slate-700">
-        <i class="fas fa-layer-group text-base"></i>
-      </button>
-      <button id="btn-dashboard" class="transition-colors text-slate-300 hover:text-slate-700">
-        <i class="fas fa-chart-bar text-base"></i>
-      </button>
+  <div class="w-1/4 flex items-center justify-end gap-6">
 
-      <div class="mt-auto">
-        <button id="btn-settings" title="Configurações" class="transition-colors text-slate-300 hover:text-slate-700">
-          <i class="fas fa-cog text-base"></i>
-        </button>
-      </div>
-    </aside>
-
-    <!-- CARD PANEL à esquerda -->
-    <div id="card-panel">
-      <div class="flex justify-between items-center p-4 border-b">
-        <h3 id="card-title" class="font-bold text-lg">ID do Caso</h3>
-        <button id="card-close" class="text-slate-500 hover:text-slate-800">✖</button>
-      </div>
-      <div class="p-4 space-y-2 text-sm flex-1 overflow-y-auto">
-        <p><strong>Score:</strong> <span id="card-score"></span></p>
-        <p><strong>Status:</strong> <span id="card-status"></span></p>
-        <p><strong>Órgão:</strong> <span id="card-orgao"></span></p>
-        <p><strong>Resumo:</strong></p>
-        <p id="card-resumo" class="text-slate-700"></p>
-
-        <label class="block mt-2 font-bold text-xs">Justificativa:</label>
-        <textarea id="card-justificativa" class="w-full p-2 border rounded-lg text-xs" rows="3"></textarea>
-
-        <label class="block mt-2 font-bold text-xs">Anexos:</label>
-        <div class="flex gap-2">
-          <button id="card-anexo" class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Adicionar</button>
-        </div>
-      </div>
-
-      <div class="p-4 border-t flex justify-end gap-2">
-        <button id="card-normal" class="bg-green-500 text-white px-3 py-1 rounded">Normal</button>
-        <button id="card-fraude" class="bg-red-500 text-white px-3 py-1 rounded">Fraude</button>
+    <div class="flex flex-col items-end border-r border-slate-800 pr-6">
+      <span class="text-[7px] font-black uppercase text-slate-500 tracking-tighter mb-1">Data Source</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] font-bold text-slate-300">GOVBR</span>
+        <div class="w-1 h-1 rounded-full bg-blue-500"></div>
       </div>
     </div>
 
-    <!-- MAIN -->
-    <main class="flex-1 overflow-y-auto p-6">
-
-      <div class="mb-6 flex justify-between items-end border-b border-slate-100 pb-4">
-        <h2 id="tab-title" class="text-lg font-extrabold tracking-tight">Home</h2>
-        <span id="tab-desc" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Visão Geral</span>
+    <div class="flex flex-col items-end">
+      <div class="flex items-center gap-2">
+        <span class="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-tighter">Engine Active</span>
+        <span class="relative flex h-1.5 w-1.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+        </span>
       </div>
+      <span id="system-version" class="text-[8px] font-mono text-slate-500 mt-1 uppercase">v1.0.42_stable</span>
+    </div>
+  </div>
+    </nav>
 
-      <!-- system status moved to header (see top nav) -->
+    <!-- APP -->
+    <div class="flex flex-1 overflow-hidden">
 
-      <!-- HOME -->
-      <section id="tab-home" class="tab-content">
-        <div class="grid grid-cols-4 gap-4 mb-8">
-          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-[9px] font-black text-slate-400 uppercase">Cards Carregados</p>
-            <p id="h-total" class="text-3xl font-bold">0</p>
-          </div>
+      <!-- SIDEBAR -->
+      <aside class="w-14 bg-white border-r flex flex-col items-center py-6 shadow-sm z-40 justify-between">
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-[9px] font-black text-slate-400 uppercase">Pendentes</p>
-            <p id="h-pending" class="text-3xl font-bold text-yellow-600">0</p>
-          </div>
+  <div class="flex flex-col items-center gap-6">
+    <button id="btn-home"
+      class="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50">
+      <i class="fas fa-home"></i>
+    </button>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-[9px] font-black text-slate-400 uppercase">Auditados</p>
-            <p id="h-audit" class="text-3xl font-bold text-emerald-600">0</p>
-          </div>
+    <button id="btn-cards"
+      class="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50">
+      <i class="fas fa-layer-group"></i>
+    </button>
 
-          <div class="bg-red-600 p-5 rounded-2xl text-white shadow-lg shadow-red-100">
-            <p class="text-[9px] font-black text-red-200 uppercase">Fraude (%)</p>
-            <p id="h-fraude-percent" class="text-3xl font-bold">0%</p>
-          </div>
+    <button id="btn-dashboard"
+      class="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50">
+      <i class="fas fa-chart-bar"></i>
+    </button>
+  </div>
+
+  <button id="btn-settings"
+    class="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50">
+    <i class="fas fa-cog"></i>
+  </button>
+
+      </aside>
+
+      <!-- MAIN -->
+      <main class="flex-1 overflow-y-auto p-6 bg-white">
+
+        <!-- TAB HEADER -->
+        <div class="border-b border-slate-100 pb-6 mb-8">
+  <h2 class="text-xl tracking-tight text-slate-800">
+    <span id="tab-title" class="font-black">Home</span>
+  </h2>
+  <p id="tab-desc" class="text-[10px] text-slate-400 uppercase tracking-[0.2em] mt-1">
+    Visão Geral
+  </p>
         </div>
 
-        <div class="p-20 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 italic">
-          Selecione "Cards" na barra lateral para iniciar a triagem.
-        </div>
-      </section>
+        <div class="fixed bottom-4 right-72 bg-white border rounded-xl shadow p-2 text-xs flex gap-2 items-center z-50">
+  <button id="replay-play" class="px-2 py-1 bg-green-500 text-white rounded">▶</button>
+  <button id="replay-pause" class="px-2 py-1 bg-slate-400 text-white rounded">⏸</button>
 
-      <!-- DASHBOARD -->
-      <section id="tab-dashboard" class="tab-content hidden">
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          <div class="bg-white p-4 rounded-2xl border shadow-sm">
-            <h3 class="font-bold text-sm text-slate-600">Top Órgãos</h3>
-            <div id="dashboard-ranking" class="mt-3 text-sm">Carregando...</div>
-          </div>
-          <div class="bg-white p-4 rounded-2xl border shadow-sm">
-            <h3 class="font-bold text-sm text-slate-600">Gestão</h3>
-            <div id="dashboard-gestao" class="mt-3 text-sm">Carregando...</div>
-          </div>
-        </div>
-      </section>
+  <select id="replay-speed" class="border rounded px-1">
+    <option value="1000">1x</option>
+    <option value="500" selected>2x</option>
+    <option value="200">5x</option>
+    <option value="50">20x</option>
+  </select>
+</div>
 
-      <!-- SETTINGS -->
-      <section id="tab-settings" class="tab-content hidden">
-        <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
-          <h3 class="font-bold text-sm">Informações do sistema</h3>
-          <div class="mt-3 text-sm">
-            <p>Versão: <span id="settings-version">v—</span></p>
-            <p>DB: <span id="settings-db">—</span></p>
-            <p>Groq: <span id="settings-groq">—</span></p>
-          </div>
-          <div class="mt-4">
-            <button id="settings-refresh" class="bg-blue-500 text-white px-3 py-1 rounded">Atualizar</button>
-          </div>
-        </div>
-        <div class="text-sm text-slate-500">Configurações adicionais virão aqui.</div>
-      </section>
 
-      <!-- CARDS -->
-      <section id="tab-cards" class="tab-content hidden space-y-4">
+<aside 
+  id="timeline-panel"
+  class="fixed right-2 top-16 w-64 max-h-[80vh] overflow-auto 
+         bg-white border border-slate-200 rounded-xl p-3 shadow text-xs z-50">
+  <div class="font-black text-slate-700 mb-2">Timeline</div>
+</aside>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-100 flex gap-4 items-end shadow-sm">
-          <div class="w-40">
-            <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Criticidade</label>
-            <select id="combo-risco" class="w-full bg-slate-50 p-2 rounded-lg text-xs cursor-pointer">
-              <option value="all">Todas</option>
-              <option value="ALTO">Alto</option>
-              <option value="MÉDIO">Médio</option>
-              <option value="BAIXO">Baixo</option>
-            </select>
-          </div>
 
-          <div class="w-40">
-            <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Status</label>
-            <select id="combo-status" class="w-full bg-white border p-2 rounded-lg text-xs font-bold text-blue-600 cursor-pointer">
-              <option value="all">Todos</option>
-              <option value="pendente">Não Auditados</option>
-              <option value="auditado">Auditados</option>
-            </select>
-          </div>
 
-          <div class="flex-1">
-            <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Busca Textual</label>
-            <input id="search-text" type="text" class="w-full bg-slate-50 p-2 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500" placeholder="Filtrar por órgão ou descrição...">
-          </div>
-        </div>
+        <!-- HOME -->
+        <section id="tab-home" class="tab-content space-y-10">
 
-        <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
-      </section>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-    </main>
-
-    <!-- CHAT -->
-    <aside class="w-80 bg-white border-l border-slate-100 flex flex-col">
-      <div class="p-4 border-b bg-slate-50/50 flex items-center justify-between">
-        <div>
-          <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">SIAV Copilot</span>
-          <span class="block text-[8px] text-green-500 font-bold uppercase italic">Llama 3.3 Connected</span>
-        </div>
-        <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-          <i class="fas fa-magic text-xs"></i>
-        </div>
+    <div class="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-blue-400 hover:shadow-md transition-all duration-300 shadow-sm">
+      <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Volume de Viagens</p>
+      <div class="flex items-end gap-2">
+        <span id="kpi-total" class="text-3xl font-light text-slate-800 tracking-tighter">0</span>
+        <span class="text-[9px] font-bold text-slate-300 mb-1.5 italic font-mono uppercase">Unidades</span>
       </div>
-
-      <div id="chat-window" class="flex-1 p-4 overflow-y-auto space-y-4 text-[11px]"></div>
-
-      <div class="p-4 bg-slate-50 border-t">
-        <div class="relative">
-          <input id="user-input" type="text" class="w-full p-3 pr-10 rounded-xl border text-xs outline-none" placeholder="Perguntar ao Llama...">
-          <button type="button" id="send-btn" class="absolute right-3 top-2.5 text-blue-600">
-            <i class="fas fa-paper-plane text-xs"></i>
-          </button>
-        </div>
+      <div class="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-full bg-slate-200 w-full group-hover:bg-blue-400 transition-colors"></div>
       </div>
-    </aside>
+    </div>
+
+    <div onclick="irParaRisco('0.8')" class="group cursor-pointer p-6 bg-white border border-slate-200 rounded-2xl hover:border-red-300 hover:bg-red-50/20 hover:shadow-md transition-all duration-300 shadow-sm">
+      <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 group-hover:text-red-500">Anomalias Detectadas</p>
+      <div class="flex items-end gap-2">
+        <span id="kpi-critico" class="text-3xl font-light text-slate-800 tracking-tighter group-hover:text-red-600">0</span>
+        <span class="text-[9px] font-bold text-red-300 mb-1.5 italic font-mono uppercase">Alertas</span>
+      </div>
+      <div class="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-full bg-red-100 w-1/3 group-hover:bg-red-500 transition-all duration-500"></div>
+      </div>
+    </div>
+
+    <div class="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all duration-300 shadow-sm">
+      <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Dados em Sigilo</p>
+      <div class="flex items-end gap-2">
+        <span id="kpi-valor" class="text-3xl font-light text-slate-800 tracking-tighter">0</span>
+        <i class="fas fa-eye-slash text-[10px] text-slate-300 mb-2"></i>
+      </div>
+      <p class="text-[8px] text-slate-300 mt-2 font-mono uppercase tracking-tighter">Restrição de transparência</p>
+    </div>
+
+    <div class="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm">
+      <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Taxa de Risco</p>
+      <div class="flex items-end gap-1">
+        <span id="kpi-risco" class="text-3xl font-light text-slate-800 tracking-tighter">0.0</span>
+        <span class="text-xl font-light text-slate-400">%</span>
+      </div>
+      <p class="text-[8px] text-slate-300 mt-2 font-mono uppercase tracking-tighter">Média ponderada global</p>
+    </div>
 
   </div>
 
-  <div id="overlay"></div>
-  <script type="module" src="/static/app.js"></script>
-</body>
-</html> 
+  <div id="lista-orgaos-container" class="grid grid-cols-1 gap-4">
+    <p class="text-sm text-slate-400 italic">Carregando órgãos...</p>
+  </div>
+
+  <!-- <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+      <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-6 flex items-center gap-2">
+          <i class="fas fa-list-ul text-blue-500"></i>
+          Resumo por Gestão Presidencial
+      </h3>
+      <div id="gestao-list" class="space-y-4">
+          <p class="text-xs text-slate-300 italic">Sincronizando metadados...</p>
+      </div>
+  </div> -->
+  
+        </section>
+
+        <!-- CARDS -->
+        <section id="tab-cards" class="tab-content hidden space-y-6">
+    <div class="sticky top-0 z-20 bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200 flex flex-wrap md:flex-nowrap gap-6 items-center shadow-md">
+        
+        <div class="flex-1 min-w-[200px] space-y-1.5">
+            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Localizar Auditoria</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                <input id="search-text"
+                       type="text"
+                       placeholder="Órgão, passageiro ou ID..."
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-blue-400 focus:bg-white transition-all font-light">
+            </div>
+        </div>
+
+        <div class="hidden md:block h-10 w-[1px] bg-slate-200 self-end mb-1"></div>
+
+        <div class="w-full md:w-48 space-y-1.5">
+            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nível de Risco</label>
+            <select id="combo-risco"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 cursor-pointer appearance-none">
+                <option value="0.0">Todos os níveis</option>
+                <option value="0.8">🚨 Crítico (> 80%)</option>
+                <option value="0.5">⚠️ Médio (> 50%)</option>
+            </select>
+        </div>
+
+        </div>
+
+    <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content hidden space-y-8">
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-2 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-trophy text-amber-500 text-[10px]"></i>
+          <span class="text-[9px] font-black text-slate-700 uppercase tracking-tight">Ranking de Conformidade</span>
+        </div>
+        <span class="text-[8px] font-mono text-slate-400">ORDENADO POR % RISCO</span>
+      </div>
+
+      <div class="p-6">
+        <div class="h-64 w-full bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden">
+           <div class="absolute inset-0 opacity-20 flex items-end gap-4 px-10 pb-4">
+              <div class="bg-blue-600 w-full" style="height: 40%"></div>
+              <div class="bg-blue-600 w-full" style="height: 70%"></div>
+              <div class="bg-blue-400 w-full" style="height: 90%"></div>
+              <div class="bg-blue-600 w-full" style="height: 55%"></div>
+           </div>
+           <span class="text-xs font-mono text-slate-400 z-10 bg-white px-4 py-2 rounded-full shadow-sm">
+             <i class="fas fa-chart-bar mr-2"></i> Gráfico: Taxa de Anomalia por Gestão
+           </span>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-slate-100/30 border-t border-slate-100 flex justify-between">
+        <span class="text-[8px] font-mono text-slate-400 uppercase tracking-tighter italic">Processado pelo SIAV Engine v3.3</span>
+        <span class="text-[8px] font-mono text-blue-500 font-bold uppercase underline cursor-pointer">Exportar PDF</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden border-t-4 border-t-amber-500">
+      <div class="px-5 py-3 border-b border-slate-50 bg-amber-50/20">
+        <span class="text-[9px] font-black text-amber-700 uppercase tracking-tight">Impacto de Sigilo</span>
+      </div>
+      <div class="p-6 flex-1 flex flex-col justify-center items-center text-center">
+        <div class="relative w-32 h-32 mb-4">
+           <svg viewBox="0 0 36 36" class="w-full h-full text-amber-500">
+             <path class="stroke-current" fill="none" stroke-width="3" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+           </svg>
+           <div class="absolute inset-0 flex flex-col items-center justify-center">
+             <span id="dash-pct-sigilo" class="text-2xl font-light text-slate-800 tracking-tighter">18%</span>
+             <span class="text-[7px] font-black text-slate-400 uppercase">Total</span>
+           </div>
+        </div>
+        <p class="text-[10px] text-slate-500 leading-relaxed px-4">
+          Das viagens marcadas como críticas, <span class="font-bold text-slate-700">1/5</span> possuem restrição de transparência.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flex flex-col bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+        <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Detalhamento por Período Presidencial</h3>
+        <button class="text-[9px] font-bold text-blue-500 hover:text-blue-700 transition-colors uppercase">Filtros Avançados <i class="fas fa-chevron-down ml-1"></i></button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-slate-50/50">
+          <tr>
+            <th class="px-6 py-3 text-[8px] font-black text-slate-400 uppercase">Gestão</th>
+            <th class="px-6 py-3 text-[8px] font-black text-slate-400 uppercase text-right">Total Viagens</th>
+            <th class="px-6 py-3 text-[8px] font-black text-slate-400 uppercase text-right">Anomalias</th>
+            <th class="px-6 py-3 text-[8px] font-black text-slate-400 uppercase text-right">Sigilo</th>
+            <th class="px-6 py-3 text-[8px] font-black text-slate-400 uppercase text-center">Taxa Risco</th>
+          </tr>
+        </thead>
+        <tbody id="dash-table-body" class="divide-y divide-slate-50">
+          <tr class="hover:bg-slate-50/50 transition-colors cursor-default">
+            <td class="px-6 py-4">
+              <span class="text-xs font-bold text-slate-700">Carregando...</span>
+            </td>
+            <td colspan="4" class="px-6 py-4 italic text-[10px] text-slate-300">Sincronizando com base GOVBR...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="tab-settings" class="tab-content hidden space-y-8 max-w-5xl">
+
+
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <div class="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-brain text-blue-500 text-[10px]"></i>
+          <span class="text-[9px] font-black text-slate-700 uppercase tracking-tight">Motor de Análise</span>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Modelo Ativo</label>
+          <select class="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all">
+            <option>Llama 3.3 70B (Default)</option>
+            <option>Llama 3.1 405B (High Precision)</option>
+            <option>DeepSeek R1 (Experimental)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between py-2">
+          <div class="flex flex-col">
+            <span class="text-[11px] font-bold text-slate-700">Auto-Auditoria</span>
+            <span class="text-[9px] text-slate-400 italic">Processar novos dados automaticamente</span>
+          </div>
+          <div class="w-10 h-5 bg-blue-600 rounded-full flex items-center px-1">
+             <div class="w-3 h-3 bg-white rounded-full translate-x-5 transition-transform"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-2 bg-slate-100/30 border-t border-slate-100 font-mono text-[8px] text-slate-400">
+        Engine: <span class="text-blue-500 font-bold">Ollama_Internal</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-shield-alt text-emerald-500 text-[10px]"></i>
+          <span class="text-[9px] font-black text-slate-700 uppercase tracking-tight">Privacidade</span>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Retenção de logs</label>
+          <select class="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 outline-none">
+            <option>90 Dias</option>
+            <option>180 Dias</option>
+            <option>1 Ano</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between py-2">
+          <div class="flex flex-col">
+            <span class="text-[11px] font-bold text-slate-700">Anonimizar Dados</span>
+            <span class="text-[9px] text-slate-400 italic">Ocultar CPFs em relatórios públicos</span>
+          </div>
+          <div class="w-10 h-5 bg-slate-200 rounded-full flex items-center px-1">
+             <div class="w-3 h-3 bg-white rounded-full transition-transform"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-2 bg-slate-100/30 border-t border-slate-100 font-mono text-[8px] text-slate-400 text-right uppercase">
+        Criptografia: <span class="text-emerald-500 font-bold font-mono">AES-256</span>
+      </div>
+    </div>
+
+    <div class="md:col-span-2 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden border-l-4 border-l-blue-500">
+      <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800">Alertas Críticos via E-mail</h3>
+          <p class="text-[10px] text-slate-400">Notificar gestores quando o score de risco ultrapassar 0.90</p>
+        </div>
+        <button class="bg-slate-900 text-white px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">
+          Configurar Destinatários
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flex justify-end gap-3 pt-4">
+    <button class="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
+      Restaurar Padrões
+    </button>
+    <button class="px-8 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">
+      Salvar Alterações
+    </button>
+  </div>
+        </section>
+
+      </main>
+
+      <!-- CHAT -->
+      <aside class="w-80 bg-white border-l border-slate-100 flex flex-col shadow-2xl z-40">
+
+  <div class="px-5 py-4 border-b border-slate-50 bg-white">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+        <span class="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em]">IA Assistant</span>
+      </div>
+      <span class="text-[8px] font-mono text-slate-300">v3.3_70B</span>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+        <i class="fas fa-robot text-xs text-blue-500"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-sm font-light text-slate-800 tracking-tight">Llama 3.3</span>
+        <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Pronto para análise</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- <div class="h-[2px] w-full bg-slate-50">
+    <div class="h-full bg-blue-500 w-full opacity-50"></div>
+  </div> -->
+
+  <div id="chat-window"
+       class="flex-1 p-5 overflow-y-auto space-y-6 bg-white custom-scrollbar">
+
+       <!-- <div class="space-y-1.5">
+         <p class="text-[8px] font-black text-slate-300 uppercase ml-1">SIAV Engine</p>
+         <div class="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl rounded-tl-none text-slate-600 leading-relaxed font-light text-[11px]">
+           Olá! Analisei os últimos dados de viagens e notei uma concentração incomum em finais de semana no Ministério da Saúde. Deseja filtrar esses casos?
+         </div>
+       </div>
+
+       <div class="space-y-1.5 flex flex-col items-end">
+         <p class="text-[8px] font-black text-blue-400 uppercase mr-1">Auditor</p>
+         <div class="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none text-[11px] font-medium shadow-lg shadow-blue-500/10">
+           Sim, por favor. Mostre-me apenas os que possuem valor acima de R$ 5.000,00.
+         </div>
+       </div> -->
+  </div>
+
+  <div class="p-5 border-t border-slate-50 bg-white">
+    <div class="relative flex items-center">
+      <input id="user-input"
+             type="text"
+             placeholder="Digite sua dúvida técnica..."
+             class="w-full bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-12 py-3 text-xs outline-none focus:border-blue-200 focus:bg-white transition-all font-light">
+
+      <button id="send-btn"
+              class="absolute right-2 w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 transition-colors">
+        <i class="fas fa-paper-plane text-xs"></i>
+      </button>
+    </div>
+    <p class="text-[8px] text-center text-slate-300 mt-3 font-mono">Pressione Enter para enviar</p>
+  </div>
+      </aside>  </div>
+
+      <!-- MODAL -->
+      <div id="card-panel" 
+     class="fixed top-14 bottom-0 left-14 right-80 bg-slate-50 shadow-[-10px_0_30px_rgba(0,0,0,0.05)] z-[40] flex flex-col transform translate-y-full [&.show]:translate-y-0 transition-transform duration-500 ease-in-out overflow-hidden border-l border-slate-200">
+    
+    <div class="bg-white border-b border-slate-200 px-8 h-[73px] flex justify-between items-center sticky top-0 z-20">
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col justify-center">
+                <span id="card-badge-risco" class="w-fit px-2 py-0.5 rounded text-[9px] font-black border uppercase mb-0.5"></span>
+                <h2 id="card-title" class="text-[11px] font-black text-slate-800 tracking-widest uppercase leading-none"></h2>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-100"></div>
+            <div class="flex flex-col justify-center">
+                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Protocolo</span>
+                <span id="card-id-label" class="text-[10px] font-mono text-blue-500 font-bold leading-none"></span>
+            </div>
+        </div>
+        
+        <button id="card-close" onclick="fecharCard()" class="group w-9 h-9 flex items-center justify-center rounded-xl hover:bg-red-50 transition-all">
+            <i class="fas fa-times text-slate-300 group-hover:text-red-500 transition-colors"></i>
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div class="max-w-6xl mx-auto grid grid-cols-12 gap-8">
+            
+            <div class="col-span-8 space-y-8">
+                <div>
+                    <p class="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] mb-2">Dossiê do Passageiro</p>
+                    <h1 id="card-nome-viajante" class="text-3xl font-light text-slate-800 tracking-tight mb-3"></h1>
+                    
+                    <div class="flex items-center gap-4 text-[10px] bg-white border border-slate-100 w-fit px-3 py-1.5 rounded-full shadow-sm mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-university text-blue-500/50"></i>
+                            <span id="card-ministerio-val" class="font-bold text-slate-700"></span>
+                        </div>
+                        <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-building text-slate-400"></i>
+                            <span id="card-orgao-val" class="text-slate-500 uppercase font-medium"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-slate-400">
+                        <i class="fas fa-map-marker-alt text-[10px]"></i>
+                        <span class="text-xs font-medium">Trecho: <span class="text-slate-600">Brasília (BSB) → Genebra (GVA) → Paris (CDG)</span></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase mb-2">Custo Total</p>
+                        <p id="card-valor" class="text-xl font-bold text-slate-800"></p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase mb-2">Início da Missão</p>
+                        <p id="card-data-inicio" class="text-xl font-bold text-slate-800"></p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase mb-2">Dias em Trânsito</p>
+                        <p class="text-xl font-bold text-slate-800">12 dias</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+                    <i class="fas fa-quote-right absolute top-6 right-8 text-white/5 text-6xl"></i>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                        <span class="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">Justificativa do Proposto</span>
+                    </div>
+                    <p id="card-motivo-val" class="text-sm leading-relaxed font-light italic text-slate-300 relative z-10"></p>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Análise do Mecanismo Llama</h4>
+                    <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                            <span class="text-[10px] font-bold text-slate-500 italic uppercase tracking-tighter">SIAV Engine v3.3</span>
+                            <span class="text-[10px] font-mono font-black text-emerald-500">CONFORME</span>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-500 font-light">Conformidade com a IN 03/2024</span>
+                                <i class="fas fa-check-circle text-emerald-500"></i>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-500 font-light">Histórico de reembolsos do passageiro</span>
+                                <span class="text-slate-400 italic font-mono text-[10px]">Sem anomalias (Últimos 24 meses)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-4 space-y-6">
+                <div class="sticky top-0 space-y-6">
+                    
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <p class="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Conformidade Manual</p>
+                        <div id="checklist-auditoria" class="space-y-2 text-xs">
+                             </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <textarea id="card-justificativa" 
+                                  placeholder="Escreva seu parecer final aqui..."
+                                  class="w-full bg-white border border-slate-200 rounded-2xl p-4 text-xs font-light focus:ring-4 focus:ring-blue-500/5 outline-none transition-all h-40 resize-none shadow-sm"></textarea>
+                        
+                        <div class="flex flex-col gap-2">
+                            <button id="card-normal" class="w-full bg-slate-900 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-[0.98]">
+                                Aprovar Auditoria
+                            </button>
+                            <button id="card-fraude" class="w-full bg-white border border-red-100 text-red-500 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all active:scale-[0.98]">
+                                Reportar Fraude
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+      </div>
+
+    <!-- APP JS -->
+    <script type="module" src="/static/app.js"></script>
+
+  </body>
+
+</html>

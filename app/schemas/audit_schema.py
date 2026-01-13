@@ -1,9 +1,16 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class AuditQuery(BaseModel):
-    pergunta: str
+class GestaoStats(BaseModel):
+    gestao: str
+    viagens: int
+    anomalias: int
+    sigilo: int
+    taxa_risco: float
 
-class AuditResponse(BaseModel):
-    resposta: str
-    contexto_utilizado: Optional[List[dict]] = None # Para mostrar os detalhes se quiseres
+class DashboardSummary(BaseModel):
+    total_viagens: int
+    total_critico: int
+    total_sigilo: int
+    taxa_risco: float
+    resumo_gestao: List[GestaoStats]
