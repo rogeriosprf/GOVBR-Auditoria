@@ -14,3 +14,20 @@ class DashboardSummary(BaseModel):
     total_sigilo: int
     taxa_risco: float
     resumo_gestao: List[GestaoStats]
+
+# Este é o contrato para CADA CARD
+class AuditCard(BaseModel):
+    id_viagem: str
+    nome_viajante: str
+    orgao_superior: str
+    destino_resumo: str
+    valor_total: float
+    score_risco: float
+    criticidade: str
+    urgente: str
+
+# Este é o contrato para a RESPOSTA DA API da lista
+class AuditListResponse(BaseModel):
+    total_encontrados: int
+    termo_busca: Optional[str]
+    viagens: List[AuditCard]    

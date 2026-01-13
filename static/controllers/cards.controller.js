@@ -1,60 +1,64 @@
 import { api } from '../services/api.js';
+import { renderCards } from '../ui/cards.js';
+import { Store } from '../store/state.js';
 
 /**
- * Carrega dados da API e renderiza no grid
- * @param {HTMLElement} container 
- * @param {Function} onCardClick 
+ * Orquestra a busca de dados e chama a UI para renderizar
+ * @param {HTMLElement} targetContainer - Opcional: container passado pela Home
  */
-export async function carregarCards(container, onCardClick) {
-  if (!container) return;
+export async function carregarCards(targetContainer = null) {
+  // 1. Sincronização de IDs: Busca 'cards-grid' (conforme seu bootstrap) ou o passado
+  const container = targetContainer || document.getElementById('cards-grid');
+  
+  if (!container) {
+    console.warn('[CardsController] Container não encontrado. Verifique se o ID no HTML é "cards-grid".');
+    return;
+  }
 
-  // Loading inicial
+  // 2. Feedback de Loading (Skeleton)
   container.innerHTML = `
-    <div class="col-span-1 text-center text-slate-400 italic py-10">
-      Carregando cards...
+    <div class="col-span-full text-center py-20">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mb-2 border-t-transparent"></div>
+      <p class="text-slate-400 italic text-sm font-medium">Sincronizando com a base de auditoria...</p>
     </div>
   `;
 
   try {
-    // Chama a API via camada service
-    const cardsData = await api.listarAuditorias();
+    // 3. Pega os filtros atuais da Store
+    const filtros = Store.getFiltros ? Store.getFiltros() : { texto: '', risco: 0 }; 
+    const p_busca = filtros.texto || "";
+    const p_score = filtros.risco || 0.0;
 
-    if (!Array.isArray(cardsData) || cardsData.length === 0) {
-      container.innerHTML = `
-        <div class="col-span-1 text-center text-slate-400 italic py-10">
-          Nenhum card encontrado.
-        </div>
-      `;
-      return;
-    }
+    // 4. Busca na API
+    const responseData = await api.listarAuditorias(p_busca, p_score);
 
-    // Limpa container
-    container.innerHTML = '';
+    // 5. Renderização e Comportamento
+    renderCards(container, responseData, async (cardData) => {
+      console.log('🚀 [Cards] Iniciando fluxo de detalhamento:', cardData.id_viagem);
+      
+      // A) Abre o modal imediatamente com os dados que já temos no card
+      if (Store.openModal) {
+        Store.openModal(cardData);
+      }
 
-    // Renderiza cada card
-    cardsData.forEach(card => {
-      const cardEl = document.createElement('div');
-      cardEl.className = 'bg-white p-6 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all';
-      cardEl.innerHTML = `
-        <p class="text-[9px] font-black text-slate-400 uppercase mb-1">${card.criticidade || 'Auditoria'}</p>
-        <h3 class="text-sm font-bold text-slate-700 mb-2">${card.nome_viajante || 'Sem nome'}</h3>
-        <p class="text-[10px] text-slate-500">Órgão: <span class="font-medium">${card.orgao_superior || '-'}</span></p>
-        <p class="text-[10px] text-slate-500">Destino: <span class="font-medium">${card.destino_resumo || '-'}</span></p>
-        <p class="text-[10px] text-slate-500">Valor: <span class="font-medium">R$ ${card.valor_total?.toFixed(2) || '0,00'}</span></p>
-      `;
-
-      cardEl.addEventListener('click', () => {
-        if (typeof onCardClick === 'function') onCardClick(card);
-      });
-
-      container.appendChild(cardEl);
+      // B) Busca detalhes profundos (Dossiê) em background
+      try {
+        const detalhesEnriquecidos = await api.getDetalhes(cardData.id_viagem);
+        // C) Atualiza o estado da Store com os dados completos
+        if (Store.openModal) {
+          Store.openModal({ ...cardData, detalhe: detalhesEnriquecidos });
+        }
+      } catch (err) {
+        console.error('[Cards] Erro ao enriquecer modal:', err);
+      }
     });
 
   } catch (err) {
-    console.error('Erro ao carregar cards:', err);
+    console.error('[CardsController] Erro fatal:', err);
     container.innerHTML = `
-      <div class="col-span-1 text-center text-red-500 italic py-10">
-        Erro ao carregar cards. Tente novamente.
+      <div class="col-span-full text-center text-red-400 py-20 border border-red-100 rounded-3xl bg-red-50/20">
+        <p class="font-bold">Servidor Indisponível</p>
+        <p class="text-xs mt-1 italic">Verifique a conexão com o backend em :8000</p>
       </div>
     `;
   }

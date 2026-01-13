@@ -66,55 +66,23 @@ class AuditorService:
 
         return result
 
-    def get_audit_list(self, busca=None, score_min=0.0):
-        rows = self.data_engine.fetch_auditorias_filtradas(busca, score_min) or []
-        normalized = []
+    def get_viagens_auditaveis(self, busca=None, score_min=0.0):
+    
+        rows = self.data_engine.fetch_viagens_filtradas(busca, score_min) or []
+    
         for r in rows:
-            id_viagem = r.get('id_viagem') or r.get('pcdp_id') or r.get('id') or r.get('identificador_id')
-            nome = r.get('nome_viajante') or r.get('nome') or r.get('nome_completo') or 'Sem nome'
-            orgao = r.get('orgao_superior') or r.get('orgao') or r.get('orgao_nome') or '-'
-            destino = r.get('destino_resumo') or r.get('destino') or ''
-            valor_total = float(r.get('valor_total') or r.get('valor') or 0)
-            score = float(r.get('score') or r.get('score_risco') or r.get('score_medio') or 0)
-            # Se score vier como percentagem (ex.: 73), converte para 0.73
-            if score > 1:
-                score = score / 100.0
-
-            normalized.append({
-                **r,
-                'id_viagem': id_viagem,
-                'nome': nome,
-                'orgao': orgao,
-                'destino_resumo': destino,
-                'valor_total': valor_total,
-                'score_risco': score
-            })
-
-        # Log para depuração
-        try:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info('get_audit_list -> rows: %d', len(normalized))
-        except Exception:
-            pass
-
-        return normalized
+            r['valor_total'] = float(r.get('valor_total') or 0)
+            r['score_risco'] = float(r.get('score_risco') or 0)
+            
+        return rows
 
     def get_audit_dossie(self, id_viagem):
-        res = self.data_engine.fetch_detalhe_pcdp(id_viagem) or {}
+        res = self.data_engine.fetch_detalhe_viagem(id_viagem) or {}
         viagem = res.get('viagem') or {}
         trechos = res.get('trechos') or []
 
-        viagem_norm = {
-            'id_viagem': viagem.get('id_viagem') or viagem.get('pcdp_id') or viagem.get('id'),
-            'nome': viagem.get('nome') or viagem.get('nome_viajante') or viagem.get('nome_completo') or '',
-            'data_inicio': viagem.get('data_inicio') or viagem.get('inicio') or '',
-            'valor_total': float(viagem.get('valor_total') or viagem.get('valor') or 0),
-            'motivo': viagem.get('motivo') or viagem.get('justificativa') or ''
-        }
-
         return {
-            'viagem': viagem_norm,
+            'viagem': viagem,
             'trechos': trechos
         }
 

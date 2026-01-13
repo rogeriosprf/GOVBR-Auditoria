@@ -37,11 +37,11 @@ class DataEngine:
         query = "SELECT * FROM audit_bi.fn_get_ranking_orgaos();"
         return self._execute_query(query)
 
-    def fetch_auditorias_filtradas(self, busca: Optional[str] = None, score_min: float = 0.0) -> List[Dict[str, Any]]:
+    def fetch_viagens_filtradas(self, busca: Optional[str] = None, score_min: float = 0.0) -> List[Dict[str, Any]]:
         query = "SELECT * FROM audit_consulta.fn_get_viagens_auditaveis(%s, %s);"
         return self._execute_query(query, (busca, score_min))
 
-    def fetch_detalhe_pcdp(self, id_viagem: str) -> Dict[str, Any]:
+    def fetch_detalhe_viagem(self, id_viagem: str) -> Dict[str, Any]:
         query = "SELECT * FROM audit_consulta.fn_get_detalhe_viagem(%s);"
         res = self._execute_query(query, (id_viagem,))
         if not res:

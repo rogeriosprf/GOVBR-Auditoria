@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Carrega os detalhes em background e atualiza o modal quando disponíveis
         try {
-          const detalhe = await api.getDetalhes(cardData.id_viagem || cardData.id || cardData.pcdp_id || cardData.identificador_id);
+          const detalhe = await api.getDetalhes(cardData.id_viagem);
           Store.openModal({ ...cardData, detalhe });
         } catch (err) {
           console.error('Erro ao carregar detalhes do card:', err);

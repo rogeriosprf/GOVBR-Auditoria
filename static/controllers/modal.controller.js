@@ -52,7 +52,7 @@ function renderModal(card) {
   const detalhe = card.detalhe?.viagem || {};
   const loading = !card.detalhe || card.detalhe?.error;
 
-  const id_viagem = detalhe.id_viagem || card.id_viagem || card.id || detalhe.pcdp_id || card.identificador_id || '';
+  const id_viagem = detalhe.id_viagem;
   const nome = loading ? 'Carregando...' : (detalhe.nome || card.nome || detalhe.nome_viajante || 'Sem nome');
   const data_inicio = loading ? 'Carregando...' : (detalhe.data_inicio || card.data_inicio || '');
   const orgao = loading ? 'Carregando...' : (detalhe.orgao || card.orgao || detalhe.orgao_superior || '');
@@ -60,7 +60,7 @@ function renderModal(card) {
   const valor = loading ? null : Number(detalhe.valor_total || card.valor_total || 0);
   const score = loading ? null : Number(detalhe.score_risco || card.score_risco || detalhe.score_medio || 0);
 
-  document.getElementById('card-title').innerText = `PCDP: ${id_viagem}`;
+  document.getElementById('card-title').innerText = `Identificador: ${id_viagem}`;
   document.getElementById('card-id-label').innerText = id_viagem;
   document.getElementById('card-nome-viajante').innerText = nome;
   document.getElementById('card-data-inicio').innerText = data_inicio;

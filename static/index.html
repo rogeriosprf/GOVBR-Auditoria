@@ -105,31 +105,17 @@
     Visão Geral
   </p>
         </div>
-
-        <div class="fixed bottom-4 right-72 bg-white border rounded-xl shadow p-2 text-xs flex gap-2 items-center z-50">
-  <button id="replay-play" class="px-2 py-1 bg-green-500 text-white rounded">▶</button>
-  <button id="replay-pause" class="px-2 py-1 bg-slate-400 text-white rounded">⏸</button>
-
-  <select id="replay-speed" class="border rounded px-1">
-    <option value="1000">1x</option>
-    <option value="500" selected>2x</option>
-    <option value="200">5x</option>
-    <option value="50">20x</option>
-  </select>
-</div>
-
-
-<aside 
-  id="timeline-panel"
-  class="fixed right-2 top-16 w-64 max-h-[80vh] overflow-auto 
-         bg-white border border-slate-200 rounded-xl p-3 shadow text-xs z-50">
-  <div class="font-black text-slate-700 mb-2">Timeline</div>
-</aside>
-
-
+        
 
         <!-- HOME -->
         <section id="tab-home" class="tab-content space-y-10">
+<!--Frase-->
+<div class="search-status-container">
+    <p id="txt-status-pesquisa">Carregando viagens...</p>
+</div>
+
+<div id="container-viagens" class="cards-grid">
+    </div>
 
   <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
@@ -179,16 +165,6 @@
     <p class="text-sm text-slate-400 italic">Carregando órgãos...</p>
   </div>
 
-  <!-- <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden">
-      <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
-      <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-6 flex items-center gap-2">
-          <i class="fas fa-list-ul text-blue-500"></i>
-          Resumo por Gestão Presidencial
-      </h3>
-      <div id="gestao-list" class="space-y-4">
-          <p class="text-xs text-slate-300 italic">Sincronizando metadados...</p>
-      </div>
-  </div> -->
   
         </section>
 
