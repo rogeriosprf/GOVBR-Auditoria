@@ -65,7 +65,8 @@ export const api = {
       return {
         total_encontrados: data.total_encontrados ?? 0,
         viagens: data.viagens ?? [],
-        termo_busca: data.termo_busca ?? p_busca
+        termo_busca: data.termo_busca ?? p_busca,
+        nivel_risco: data.nivel_risco ?? null
       };
     } catch (error) {
       console.error('[API] Erro ao listar auditorias:', error);
@@ -86,6 +87,11 @@ export const api = {
   },
 
   async perguntarIA(mensagem) {
+    
+    if (!mensagem || !mensagem.trim()) {
+    return { resposta: "Digite uma pergunta válida." };
+  }
+      
     try {
       const response = await fetch(`${API_BASE}/chat`, {
         method: 'POST',

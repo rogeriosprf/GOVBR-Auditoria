@@ -10,9 +10,10 @@ router = APIRouter(prefix="/api/auditoria", tags=["Auditoria"])
 
 class ChatPayload(BaseModel):
     mensagem: str
+    id_viagem: Optional[str] = None
 
 @router.get("/summary")
-async def get_summary(service: AuditorService = Depends(get_auditor_service)):
+def get_summary(service: AuditorService = Depends(get_auditor_service)):
     return service.get_home_stats()
 
 @router.get("/viagens", response_model=AuditListResponse)
@@ -31,10 +32,10 @@ def listar_viagens(
     }
 
 @router.get("/detalhes/{id_viagem}")
-async def detalhes(id_viagem: str, service: AuditorService = Depends(get_auditor_service)):
+def detalhes(id_viagem: str, service: AuditorService = Depends(get_auditor_service)):
     return service.get_audit_dossie(id_viagem)
 
 @router.post("/chat")
-async def chat_ia(payload: ChatPayload, service: AuditorService = Depends(get_auditor_service)):
-    resposta = await service.perguntar_ia(payload.mensagem)
+def chat_ia(payload: ChatPayload, service: AuditorService = Depends(get_auditor_service)):
+    resposta = service.perguntar_ia(payload.mensagem, payload.id_viagem)
     return {"resposta": resposta}

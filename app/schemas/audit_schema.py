@@ -30,4 +30,5 @@ class AuditCard(BaseModel):
 class AuditListResponse(BaseModel):
     total_encontrados: int
     termo_busca: Optional[str]
-    viagens: List[AuditCard]    
+    nivel_risco: str
+    viagens: List[AuditCard]

@@ -1,5 +1,1 @@
-import { Store } from './store.js';
-
-// Re-export the primary Store implementation for backwards compatibility
-export { Store as Store };
-
+export { Store } from './store.js';

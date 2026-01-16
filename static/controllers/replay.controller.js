@@ -1,4 +1,4 @@
-import { Store } from '../store/store.js';
+import { Store } from '../store/state.js';
 
 export function initReplayController() {
   const playBtn = document.getElementById('replay-play');

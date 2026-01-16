@@ -10,11 +10,10 @@ export function renderCards(grid, data = {}, onClickCard) {
   const statusEl = document.getElementById('txt-status-pesquisa');
   if (statusEl) {
     const nivel = cards.length > 0 ? cards[0].criticidade.toLowerCase() : 'auditáveis';
-    const termoTxt = termo ? ` para "<strong>${termo}</strong>"` : "";
-    statusEl.innerHTML = `Exibindo <strong>${total}</strong> viagens ${nivel}${termoTxt}`;
+    statusEl.textContent = `Exibindo ${total} viagens ${nivel}${termo ? ` para "${termo}"` : ""}`;
   }
 
-  grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-4";
+  grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-3";
 
   if (cards.length === 0) {
     grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-sm italic font-medium">Nenhuma auditoria encontrada</div>`;
@@ -25,12 +24,12 @@ export function renderCards(grid, data = {}, onClickCard) {
   const sortedCards = [...cards].sort((a, b) => (b.score_risco || 0) - (a.score_risco || 0));
 
   grid.innerHTML = sortedCards.map(card => {
-    const scoreNum = card.score_risco || 0;
-    
+    const scoreNum = Number(card.score_risco ?? 0);
+
     // Mapeamento de Cores e Labels baseado no campo 'criticidade' do SQL
     let accentColor = '#10b981'; // Normal (Emerald)
     let lightBg = 'bg-emerald-50/30';
-    
+
     if (card.criticidade === 'CRÍTICO') {
       accentColor = '#ef4444'; // Red
       lightBg = 'bg-red-50/30';
@@ -46,7 +45,7 @@ export function renderCards(grid, data = {}, onClickCard) {
            data-card-id="${card.id_viagem}"
            style="--card-accent: ${accentColor};">
         
-        <div class="px-5 py-3 border-b border-slate-50 flex justify-between items-center ${lightBg}">
+        <div class="px-3 py-2 border-b border-slate-50 flex justify-between items-center ${lightBg}">
           <div class="flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${accentColor}"></span>
             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${card.criticidade}</span>
@@ -57,12 +56,12 @@ export function renderCards(grid, data = {}, onClickCard) {
           </div>
         </div>
 
-        <div class="p-5 flex-1 flex flex-col">
-          <h3 class="text-sm font-light text-slate-800 leading-snug mb-3 group-hover:text-slate-900 transition-colors line-clamp-2 h-10">
+        <div class="p-3 flex-1 flex flex-col">
+          <h3 class="text-xs font-bold text-slate-800 leading-snug mb-1 group-hover:text-slate-900 transition-colors line-clamp-2 h-8">
             ${card.nome_viajante}
           </h3>
 
-          <div class="mb-4">
+          <div class="mb-2">
             <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1">Órgão Superior / Destino</p>
             <p class="text-[10px] text-slate-500 font-medium truncate">
               ${card.orgao_superior}
@@ -72,11 +71,12 @@ export function renderCards(grid, data = {}, onClickCard) {
             </p>
           </div>
 
-          <div class="mt-auto pt-4 border-t border-slate-50 flex justify-between items-end">
+          <div class="mt-auto pt-2 border-t border-slate-50 flex justify-between items-end">
             <div>
               <p class="text-[8px] font-black text-slate-300 uppercase mb-1">Montante</p>
-              <p class="text-lg font-light text-slate-800 tracking-tighter">
-                <span class="text-[10px] font-bold text-slate-300">R$</span> ${card.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <p class="text-sm font-bold text-slate-800 tracking-tighter">
+                <span class="text-[10px] font-bold text-slate-300">R$</span> ${Number(card.valor_total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
               </p>
             </div>
             <div class="text-right">

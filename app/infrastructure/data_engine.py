@@ -41,6 +41,19 @@ class DataEngine:
         query = "SELECT * FROM audit_consulta.fn_get_viagens_auditaveis(%s, %s);"
         return self._execute_query(query, (busca, score_min))
 
+    def fetch_analise_temporal(self) -> List[Dict[str, Any]]:
+        query = "SELECT * FROM audit_bi.cubo_analise_temporal ORDER BY mes ASC;"
+        return self._execute_query(query)
+
+    def fetch_ranking_destinos(self) -> List[Dict[str, Any]]:
+        query = "SELECT * FROM audit_bi.cubo_ranking_destinos ORDER BY CAST(contagem AS INTEGER) DESC LIMIT 20;"
+        return self._execute_query(query)
+
+    def fetch_ranking_servidores(self) -> List[Dict[str, Any]]:
+        # Assumindo colunas padrao, sem order especifico arriscado por enquanto ou order by risco se existir
+        query = "SELECT * FROM audit_bi.cubo_ranking_servidores LIMIT 50;"
+        return self._execute_query(query)
+
     def fetch_detalhe_viagem(self, id_viagem: str) -> Dict[str, Any]:
         query = "SELECT * FROM audit_consulta.fn_get_detalhe_viagem(%s);"
         res = self._execute_query(query, (id_viagem,))

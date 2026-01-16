@@ -1,10 +1,10 @@
 # app/infrastructure/embedding.py
-import openai
+from sentence_transformers import SentenceTransformer
 
 class EmbeddingModel:
-    def __init__(self, model="text-embedding-3-small"):
-        self.model = model
+    def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model)
 
     def encode(self, texto: str):
-        resp = openai.Embedding.create(input=texto, model=self.model)
-        return resp["data"][0]["embedding"]
+        # normalize_embeddings ajuda bastante em busca vetorial
+        return self.model.encode(texto, normalize_embeddings=True).tolist()

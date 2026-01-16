@@ -1,4 +1,4 @@
-import { Store } from '../store/store.js';
+import { Store } from '../store/state.js';
 import { renderTimeline } from '../ui/timeline.js';
 
 export function initTimelineController() {

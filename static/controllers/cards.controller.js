@@ -2,6 +2,8 @@ import { api } from '../services/api.js';
 import { renderCards } from '../ui/cards.js';
 import { Store } from '../store/state.js';
 
+let currentDetailRequestId = 0;
+
 /**
  * Orquestra a busca de dados e chama a UI para renderizar
  * @param {HTMLElement} targetContainer - Opcional: container passado pela Home
@@ -34,20 +36,19 @@ export async function carregarCards(targetContainer = null) {
 
     // 5. Renderização e Comportamento
     renderCards(container, responseData, async (cardData) => {
-      console.log('🚀 [Cards] Iniciando fluxo de detalhamento:', cardData.id_viagem);
-      
-      // A) Abre o modal imediatamente com os dados que já temos no card
-      if (Store.openModal) {
-        Store.openModal(cardData);
-      }
+      const requestId = ++currentDetailRequestId;
 
-      // B) Busca detalhes profundos (Dossiê) em background
+      console.log('🚀 [Cards] Iniciando fluxo de detalhamento:', cardData.id_viagem);
+
+      Store.openModal?.(cardData);
+
       try {
         const detalhesEnriquecidos = await api.getDetalhes(cardData.id_viagem);
-        // C) Atualiza o estado da Store com os dados completos
-        if (Store.openModal) {
-          Store.openModal({ ...cardData, detalhe: detalhesEnriquecidos });
-        }
+      
+        // Se o usuário clicou em outro card depois, ignora esta resposta
+        if (requestId !== currentDetailRequestId) return;
+      
+        Store.openModal?.({ ...cardData, detalhe: detalhesEnriquecidos });
       } catch (err) {
         console.error('[Cards] Erro ao enriquecer modal:', err);
       }

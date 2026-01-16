@@ -20,6 +20,8 @@ import { api } from './services/api.js';
 // =========================
 import { setupTabs } from './ui/tabs.js';
 import { setupChat } from './ui/chat.js';
+import { initDashboard } from './ui/dashboard.js';
+import { initHomeLanding } from './ui/home_landing.js';
 
 // =========================
 // DEBUG / DEVTOOLS

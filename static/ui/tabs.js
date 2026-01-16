@@ -8,7 +8,8 @@ export function setupTabs() {
       button: 'btn-home',
       section: 'tab-home',
       title: 'Home',
-      desc: 'Visão Geral'
+      desc: 'Visão Geral',
+      onShow: () => window.initHomeLanding?.()
     },
     cards: {
       button: 'btn-cards',
@@ -21,7 +22,7 @@ export function setupTabs() {
       section: 'tab-dashboard',
       title: 'Dashboard',
       desc: 'Métricas e ranking',
-      onShow: () => window.loadDashboard?.()
+      onShow: () => window.initDashboard?.()
     },
     settings: {
       button: 'btn-settings',
