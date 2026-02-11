@@ -18,7 +18,13 @@ def init_app() -> FastAPI:
 
     # Infra
     data_engine = DataEngine(db_url=settings.database_url)
-    embedding_model = EmbeddingModel()
+    embedding_error = None
+    try:
+        embedding_model = EmbeddingModel()
+    except Exception as exc:
+        embedding_error = str(exc)
+        logger.warning("EmbeddingModel indisponivel; IA desabilitada: %s", exc)
+        embedding_model = None
     groq_client = GroqClient(
         api_key=settings.groq_api_key,
         model=settings.groq_model,
@@ -31,6 +37,7 @@ def init_app() -> FastAPI:
         embedding_model=embedding_model,
         groq_client=groq_client,
     )
+    app.state.embedding_error = embedding_error
 
     # Routers
     app.include_router(auditor_route.router)

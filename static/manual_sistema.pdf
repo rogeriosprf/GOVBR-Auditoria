@@ -1,0 +1,119 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [ 4 0 R ] >>
+endobj
+3 0 obj
+<< /Length 1817 >>
+stream
+BT
+/F1 11 Tf
+50 800 Td
+14 TL
+(Manual do Sistema - Audit-GOV) Tj
+T*
+() Tj
+T*
+(1. Objetivo) Tj
+T*
+(Este sistema apoia a triagem e priorizacao de casos de auditoria de viagens.) Tj
+T*
+() Tj
+T*
+(2. Abas principais) Tj
+T*
+(- Home: alertas operacionais e conformidade.) Tj
+T*
+(- Insights: analises sinteticas \(com cache para reduzir consumo\).) Tj
+T*
+(- Auditorias: lista de viagens para triagem e investigacao.) Tj
+T*
+(- Dashboard: visoes BI de risco, valor e rankings.) Tj
+T*
+(- Pagamentos: monitor diario, outliers de taxa e casos acionaveis.) Tj
+T*
+() Tj
+T*
+(3. Home) Tj
+T*
+(- Alertas Operacionais: le de audit_bi.kpi_alertas_operacionais.) Tj
+T*
+(- Conformidade: distribuicao por criticidade.) Tj
+T*
+() Tj
+T*
+(4. Monitor de Pagamentos) Tj
+T*
+(- Serie diaria por mes selecionado.) Tj
+T*
+(- Outliers de taxa de servico \(top ocorrencias\).) Tj
+T*
+(- Compras tardias \(emissao apos inicio\).) Tj
+T*
+(- Casos acionaveis \(alto score e alto valor\).) Tj
+T*
+() Tj
+T*
+(5. Filtros e operacao) Tj
+T*
+(- O seletor de mes afeta os blocos dependentes de data no monitor.) Tj
+T*
+(- Abertura de detalhe de caso ocorre pela aba Auditorias.) Tj
+T*
+() Tj
+T*
+(6. Endpoints principais) Tj
+T*
+(- /api/auditoria/control-alertas) Tj
+T*
+(- /api/auditoria/control-conformidade) Tj
+T*
+(- /api/auditoria/control-pagamentos) Tj
+T*
+(- /api/auditoria/control-pagamentos-outliers) Tj
+T*
+(- /api/auditoria/control-pagamentos-tardias) Tj
+T*
+(- /api/auditoria/control-pagamentos-casos) Tj
+T*
+() Tj
+T*
+(7. Boas praticas para auditor) Tj
+T*
+(- Priorize casos com alto score e alto impacto financeiro.) Tj
+T*
+(- Valide justificativas em urgencias e compras tardias.) Tj
+T*
+(- Cruze alertas com orgao e perfil de criticidade.) Tj
+T*
+() Tj
+T*
+(8. Suporte) Tj
+T*
+(Em caso de divergencia de dados, verificar cubos do schema audit_bi e logs da API.) Tj
+T*
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000144 00000 n 
+0000002013 00000 n 
+0000002139 00000 n 
+trailer
+<< /Size 6 /Root 5 0 R >>
+startxref
+2188
+%%EOF

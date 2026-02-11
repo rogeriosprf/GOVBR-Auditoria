@@ -27,12 +27,25 @@ export async function carregarCards(targetContainer = null) {
 
   try {
     // 3. Pega os filtros atuais da Store
-    const filtros = Store.getFiltros ? Store.getFiltros() : { texto: '', risco: 0 }; 
-    const p_busca = filtros.texto || "";
-    const p_score = filtros.risco || 0.0;
+    const filtros = Store.getFiltros ? Store.getFiltros() : { texto: '', criticidade: '', urgente: null };
+    const textoInput = document.getElementById('search-text');
+    const riscoSelect = document.getElementById('combo-risco');
+    const urgenteSelect = document.getElementById('combo-urgente');
+
+    const p_busca = (textoInput?.value ?? filtros.texto ?? "").trim();
+    const p_criticidade = riscoSelect
+      ? (riscoSelect.value || '').trim()
+      : (filtros.criticidade || '');
+    let p_urgente = filtros.urgente ?? null;
+    if (urgenteSelect) {
+      const val = (urgenteSelect.value || '').trim();
+      if (val === 'true') p_urgente = true;
+      else if (val === 'false') p_urgente = false;
+      else p_urgente = null;
+    }
 
     // 4. Busca na API
-    const responseData = await api.listarAuditorias(p_busca, p_score);
+    const responseData = await api.listarAuditorias(p_busca, p_criticidade, p_urgente);
 
     // 5. Renderização e Comportamento
     renderCards(container, responseData, async (cardData) => {

@@ -14,7 +14,7 @@ export function renderHomeKPIs(summary) {
 
   update('kpi-total', summary.total_viagens);
   update('kpi-critico', summary.total_critico);
-  update('kpi-valor', summary.total_sigilo, '', true);
+  update('kpi-valor', summary.total_valor, '', true);
   update('kpi-risco', summary.taxa_risco_global, '%');
 }
 

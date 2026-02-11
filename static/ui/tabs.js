@@ -1,5 +1,12 @@
 // static/ui/tabs.js (ou onde você tem setupTabs)
-export function setupTabs() {
+export function setupTabs({
+  onHome,
+  onInsights,
+  onDashboard,
+  onPagamentos,
+  onSettings,
+  onBeforeTabChange,
+} = {}) {
   const title = document.getElementById('tab-title');
   const desc = document.getElementById('tab-desc');
 
@@ -8,8 +15,15 @@ export function setupTabs() {
       button: 'btn-home',
       section: 'tab-home',
       title: 'Home',
-      desc: 'Visão Geral',
-      onShow: () => window.initHomeLanding?.()
+      desc: 'Centro Operacional de Auditoria',
+      onShow: onHome
+    },
+    insights: {
+      button: 'btn-insights',
+      section: 'tab-insights',
+      title: 'Insights',
+      desc: 'Análises geradas uma única vez',
+      onShow: onInsights
     },
     cards: {
       button: 'btn-cards',
@@ -22,14 +36,21 @@ export function setupTabs() {
       section: 'tab-dashboard',
       title: 'Dashboard',
       desc: 'Métricas e ranking',
-      onShow: () => window.initDashboard?.()
+      onShow: onDashboard
+    },
+    pagamentos: {
+      button: 'btn-pagamentos',
+      section: 'tab-pagamentos',
+      title: 'Pagamentos',
+      desc: 'Monitor e análises financeiras',
+      onShow: onPagamentos
     },
     settings: {
       button: 'btn-settings',
       section: 'tab-settings',
       title: 'Configurações',
       desc: 'Ajustes do sistema',
-      onShow: () => window.loadSettings?.()
+      onShow: onSettings
     }
   };
 
@@ -51,6 +72,8 @@ export function setupTabs() {
     const tab = tabs[key];
     if (!tab) return;
 
+    onBeforeTabChange?.(key);
+
     hideAll();
 
     const section = document.getElementById(tab.section);
@@ -64,6 +87,12 @@ export function setupTabs() {
 
     if (title) title.innerText = tab.title;
     if (desc) desc.innerText = tab.desc;
+
+    const controlKpis = document.getElementById('control-kpis-header');
+    if (controlKpis) {
+      if (key === 'home') controlKpis.classList.remove('hidden');
+      else controlKpis.classList.add('hidden');
+    }
 
     tab.onShow?.();
   }

@@ -11,8 +11,8 @@ class GestaoStats(BaseModel):
 class DashboardSummary(BaseModel):
     total_viagens: int
     total_critico: int
-    total_sigilo: int
-    taxa_risco: float
+    total_valor: float
+    taxa_risco_global: float
     resumo_gestao: List[GestaoStats]
 
 # Este é o contrato para CADA CARD
@@ -24,7 +24,7 @@ class AuditCard(BaseModel):
     valor_total: float
     score_risco: float
     criticidade: str
-    urgente: str
+    urgente: bool
 
 # Este é o contrato para a RESPOSTA DA API da lista
 class AuditListResponse(BaseModel):

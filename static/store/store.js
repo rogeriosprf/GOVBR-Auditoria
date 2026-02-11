@@ -17,8 +17,9 @@ class StoreCore {
       stats: null,
       filtros: {
         texto: '',
-        risco: 0,
-        status: 'all'
+        criticidade: '',
+        status: 'all',
+        urgente: null
       },
       modal: {
         aberto: false,

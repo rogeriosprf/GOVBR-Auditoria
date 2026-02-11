@@ -6,7 +6,8 @@ class Settings(BaseSettings):
     app_name: str = "Audit-GOV | Investigador IA"
     debug: bool = False
 
-    database_url: str = Field(..., alias="DATABASE_URL")
+    # database_url: str = Field(..., alias="DATABASE_URL")
+    database_url: str = Field(..., alias="PG_DSN")
     groq_api_key: str = Field(..., alias="GROQ_API_KEY")
 
     # LLM config (portfólio-friendly)

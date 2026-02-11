@@ -33,12 +33,18 @@ export function renderCards(grid, data = {}, onClickCard) {
     if (card.criticidade === 'CRÍTICO') {
       accentColor = '#ef4444'; // Red
       lightBg = 'bg-red-50/30';
-    } else if (card.criticidade === 'ALERTA') {
-      accentColor = '#f59e0b'; // Amber
+    } else if (card.criticidade === 'ALTO') {
+      accentColor = '#f97316'; // Orange
+      lightBg = 'bg-orange-50/30';
+    } else if (card.criticidade === 'ALERTA' || card.criticidade === 'MÉDIO') {
+      accentColor = '#f59e0b'; // Yellow/Amber
       lightBg = 'bg-amber-50/30';
+    } else if (card.criticidade === 'BAIXO') {
+      accentColor = '#3b82f6'; // Blue
+      lightBg = 'bg-blue-50/30';
     }
 
-    const iconeUrgencia = card.urgente === 'SIM' ? '<span class="text-amber-500 animate-pulse" title="Urgente">⚡</span>' : '';
+    const iconeUrgencia = card.urgente ? '<span class="text-amber-500 animate-pulse" title="Urgente">⚡</span>' : '';
 
     return `
       <div class="group flex flex-col h-full cursor-pointer bg-white border border-slate-100 rounded-2xl hover:border-slate-300 transition-all duration-300 shadow-sm overflow-hidden"
@@ -101,5 +107,3 @@ export function renderCards(grid, data = {}, onClickCard) {
     };
   });
 }
-
-window.renderCards = renderCards;

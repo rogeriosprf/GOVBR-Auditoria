@@ -6,6 +6,8 @@ export function renderModal(card) {
   const detalheRaw = card.detalhe || null;
   const viagem = detalheRaw?.viagem || {};
   const trechos = detalheRaw?.trechos || [];
+  const pagamentos = detalheRaw?.pagamentos || [];
+  const passagens = detalheRaw?.passagens || [];
   const loading = !detalheRaw || detalheRaw?.error;
 
   // IDs do processo (no seu HTML chama "Protocolo")
@@ -34,7 +36,11 @@ export function renderModal(card) {
     ? 'Carregando...'
     : formatarDataBR(viagem.periodo_data_de_fim);
 
-  const justificativa = loading
+  const motivo = loading
+    ? 'Carregando...'
+    : (viagem.motivo || 'Sem motivo informado');
+
+  const justificativaUrgencia = loading
     ? 'Carregando...'
     : (viagem.justificativa_urgencia_viagem || 'Sem justificativa');
 
@@ -74,7 +80,29 @@ export function renderModal(card) {
   setText('card-orgao-val', orgaoSolicitante);
 
   setText('card-data-inicio', `${inicioFmt} → ${fimFmt}`);
-  setText('card-motivo-val', justificativa);
+  setText('card-motivo-val', motivo);
+
+  const urgente = loading ? null : normalizeUrgente(viagem.viagem_urgente);
+  const urgenteEl = document.getElementById('card-urgente');
+  const urgenciaBox = document.getElementById('card-urgencia-box');
+  if (urgenteEl) {
+    if (urgente) {
+      urgenteEl.textContent = 'URGENTE';
+      urgenteEl.classList.remove('hidden');
+    } else {
+      urgenteEl.textContent = '';
+      urgenteEl.classList.add('hidden');
+    }
+  }
+  if (urgenciaBox) {
+    if (urgente) {
+      setText('card-justificativa-urgencia', justificativaUrgencia);
+      urgenciaBox.classList.remove('hidden');
+    } else {
+      setText('card-justificativa-urgencia', '');
+      urgenciaBox.classList.add('hidden');
+    }
+  }
 
   // Trecho: mostra todos os trechos (ou destinos)
   const trechoTxt = loading
@@ -128,6 +156,11 @@ export function renderModal(card) {
     viagem,
     valores: { valorTotal, valorDevolucao },
   });
+
+  setupModalTabs();
+  renderTimeline({ loading, trechos, viagem, card });
+  renderPagamentos({ loading, pagamentos });
+  renderPassagens({ loading, passagens });
 }
 
 // ----------------------
@@ -188,6 +221,15 @@ function formatarTrechos(trechos, destinosFallback, destinoResumoFallback) {
   return destinosFallback || destinoResumoFallback || '—';
 }
 
+function normalizeUrgente(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'boolean') return value;
+  const num = Number(value);
+  if (!Number.isNaN(num)) return num > 0;
+  const text = String(value).trim().toUpperCase();
+  return text === 'S' || text === 'SIM' || text === 'TRUE';
+}
+
 function calcularDias(dataInicioISO, dataFimISO) {
   const ini = parseISODateLocal(dataInicioISO);
   const fim = parseISODateLocal(dataFimISO);
@@ -219,6 +261,166 @@ function formatarDataBR(iso) {
   const dt = parseISODateLocal(iso);
   if (!dt) return '—';
   return dt.toLocaleDateString('pt-BR');
+}
+
+function setupModalTabs() {
+  const btnTimeline = document.getElementById('modal-tab-timeline');
+  const btnFinanceiro = document.getElementById('modal-tab-financeiro');
+  const panelTimeline = document.getElementById('modal-panel-timeline');
+  const panelFinanceiro = document.getElementById('modal-panel-financeiro');
+
+  if (!btnTimeline || !btnFinanceiro || !panelTimeline || !panelFinanceiro) return;
+  if (btnTimeline.dataset.bound === '1') return;
+
+  const activate = (key) => {
+    const isTimeline = key === 'timeline';
+    panelTimeline.classList.toggle('hidden', !isTimeline);
+    panelFinanceiro.classList.toggle('hidden', isTimeline);
+
+    btnTimeline.className = isTimeline
+      ? 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white'
+      : 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200';
+
+    btnFinanceiro.className = !isTimeline
+      ? 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white'
+      : 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200';
+  };
+
+  btnTimeline.addEventListener('click', () => activate('timeline'));
+  btnFinanceiro.addEventListener('click', () => activate('financeiro'));
+  btnTimeline.dataset.bound = '1';
+  btnFinanceiro.dataset.bound = '1';
+  activate('timeline');
+}
+
+function renderTimeline({ loading, trechos, viagem, card }) {
+  const container = document.getElementById('card-timeline');
+  if (!container) return;
+
+  if (loading) {
+    container.innerHTML = '<p class="text-slate-400 italic text-sm">Carregando...</p>';
+    return;
+  }
+
+  if (!trechos || trechos.length === 0) {
+    const fallback = viagem?.destinos || card?.destino_resumo || '—';
+    container.innerHTML = `<p class="text-slate-500 text-sm">Sem trechos. Destino: <strong>${fallback}</strong></p>`;
+    return;
+  }
+
+  const sorted = [...trechos].sort((a, b) => {
+    const sa = Number(a.sequencia_trecho ?? 0);
+    const sb = Number(b.sequencia_trecho ?? 0);
+    if (sa !== sb) return sa - sb;
+    const da = String(a.origem_data || '');
+    const db = String(b.origem_data || '');
+    return da.localeCompare(db);
+  });
+
+  container.innerHTML = sorted.map((t, idx) => {
+    const origem = formatLocal(t.origem_cidade, t.origem_uf, t.origem_pais);
+    const destino = formatLocal(t.destino_cidade, t.destino_uf, t.destino_pais);
+    const dataOrigem = formatarDataBR(t.origem_data);
+    const dataDestino = formatarDataBR(t.destino_data);
+    const meio = (t.meio_de_transporte || '—').toString();
+    const missao = t.missao ? 'Missão' : 'Sem missão';
+    const diarias = t.numero_diarias ? `${t.numero_diarias} diárias` : '—';
+
+    return `
+      <div class="flex items-start gap-4">
+        <div class="flex flex-col items-center">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          ${idx < sorted.length - 1 ? '<span class="w-px h-10 bg-emerald-200 mt-1"></span>' : ''}
+        </div>
+        <div class="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
+          <div class="flex justify-between items-start gap-4">
+            <div>
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${dataOrigem} → ${dataDestino}</p>
+              <p class="text-sm font-bold text-slate-700">${origem} <span class="text-slate-300">→</span> ${destino}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${meio}</p>
+              <p class="text-xs text-slate-500">${diarias}</p>
+              <p class="text-[10px] font-bold text-emerald-600">${missao}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPagamentos({ loading, pagamentos }) {
+  const container = document.getElementById('card-pagamentos');
+  if (!container) return;
+  if (loading) {
+    container.innerHTML = '<p class="text-slate-400 italic text-sm">Carregando...</p>';
+    return;
+  }
+  if (!pagamentos || pagamentos.length === 0) {
+    container.innerHTML = '<p class="text-slate-400 italic text-sm">Sem dados de pagamentos.</p>';
+    return;
+  }
+
+  container.innerHTML = pagamentos.map(p => {
+    const valor = Number(p.valor ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const tipo = p.tipo_de_pagamento || '—';
+    const orgao = p.nome_do_orgao_pagador || p.nome_do_orgao_superior || '—';
+    const ug = p.nome_da_unidade_gestora_pagadora || '—';
+    return `
+      <div class="flex justify-between items-center bg-white border border-slate-100 rounded-xl px-4 py-2">
+        <div>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${tipo}</p>
+          <p class="text-xs font-medium text-slate-700">${orgao}</p>
+          <p class="text-[10px] text-slate-400">${ug}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-slate-800">R$ ${valor}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPassagens({ loading, passagens }) {
+  const container = document.getElementById('card-passagens');
+  if (!container) return;
+  if (loading) {
+    container.innerHTML = '<p class="text-slate-400 italic text-sm">Carregando...</p>';
+    return;
+  }
+  if (!passagens || passagens.length === 0) {
+    container.innerHTML = '<p class="text-slate-400 italic text-sm">Sem dados de passagens.</p>';
+    return;
+  }
+
+  container.innerHTML = passagens.map(p => {
+    const origem = formatLocal(p.cidade_origem_ida, p.uf_origem_ida, p.pais_origem_ida);
+    const destino = formatLocal(p.cidade_destino_ida, p.uf_destino_ida, p.pais_destino_ida);
+    const valor = Number(p.valor_da_passagem ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const taxa = Number(p.taxa_de_servico ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const meio = p.meio_de_transporte || '—';
+    const dataCompra = formatarDataBR(p.data_da_emissao_compra);
+    const horaCompra = p.hora_da_emissao_compra || '';
+    return `
+      <div class="flex justify-between items-center bg-white border border-slate-100 rounded-xl px-4 py-2">
+        <div>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${meio}</p>
+          <p class="text-xs font-medium text-slate-700">${origem} <span class="text-slate-300">→</span> ${destino}</p>
+          <p class="text-[10px] text-slate-400">Compra: ${dataCompra} ${horaCompra}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-slate-800">R$ ${valor}</p>
+          <p class="text-[10px] text-slate-400">Taxa R$ ${taxa}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatLocal(cidade, uf, pais) {
+  const parts = [cidade, uf, pais].filter(v => v && String(v).trim());
+  return parts.length ? parts.join('/') : '—';
 }
 
 
