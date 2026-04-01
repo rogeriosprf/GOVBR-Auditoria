@@ -2,13 +2,15 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 psycopg2-binary>=2.9
 pgvector>=0.2
-sentence-transformers==5.2.0
-transformers==4.57.3
-torch>=2.1,<3
-torchvision>=0.16,<1
+# Use versões que não tragam o CUDA gigante se possível
+sentence-transformers>=3.0.0
+transformers>=4.40.0
+# Para o torch no Render, o ideal é o básico de CPU
+torch>=2.1,<3 --index-url https://download.pytorch.org/whl/cpu
 groq>=0.9
 polars>=1.0
 python-multipart
 python-dotenv
 pydantic>=2.7
-pydantic-settings>=2.2  # novo: melhor que dotenv puro
+pydantic-settings>=2.2
+aiofiles  # ESSENCIAL para o seu FileResponse no main.py funcionar!
