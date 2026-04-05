@@ -7,7 +7,7 @@ class EmbeddingModel:
     def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.model_name = model
         self.api_token = settings.hf_token
-        self.api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+        self.api_url = f"https://router.huggingface.co/hf-inference/models/{self.model_name}"
 
     def encode(self, texto: str):
         if not self.api_token:
