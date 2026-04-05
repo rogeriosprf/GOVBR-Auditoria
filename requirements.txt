@@ -10,3 +10,4 @@ python-dotenv
 pydantic>=2.7
 pydantic-settings>=2.2
 aiofiles  # ESSENCIAL para o seu FileResponse no main.py funcionar!
+httpx

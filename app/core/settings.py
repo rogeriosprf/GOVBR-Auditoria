@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.3-70b-versatile"  # ajuste se quiser
     groq_temperature: float = 0.0
 
+    # NOVA VARIÁVEL: Token para o Embedding via API
+    hf_token: str = Field(..., alias="HF_TOKEN")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
