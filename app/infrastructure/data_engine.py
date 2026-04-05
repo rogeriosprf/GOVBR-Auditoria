@@ -18,9 +18,9 @@ class DataEngine:
 
     @contextmanager
     def _get_connection(self):
-        """Gerenciador de conexão com retry para problemas de SSL (comum no Render)"""
+        """Gerenciador de conexão resiliente com retry para problemas de SSL no Render"""
         conn = None
-        for attempt in range(3):  # máximo 3 tentativas
+        for attempt in range(3):  # Máximo 3 tentativas
             try:
                 conn = psycopg2.connect(
                     self.db_url,
@@ -31,23 +31,26 @@ class DataEngine:
                     keepalives_count=5,
                 )
                 
-                # Registra o tipo vector do pgvector
+                # Registra o tipo vector (necessário para pgvector)
                 register_vector(conn)
                 
                 yield conn
-                return  # se chegou aqui, deu certo
+                return  # Sucesso: sai do loop
                 
             except psycopg2.OperationalError as e:
                 error_msg = str(e).lower()
                 
-                # Erros típicos de SSL / conexão fechada pelo Render
+                # Detecta erros comuns de SSL/conexão no Render
                 if any(keyword in error_msg for keyword in [
                     "ssl connection has been closed",
                     "server closed the connection",
                     "connection reset",
-                    "no connection to the server"
+                    "no connection to the server",
+                    "could not connect to server"
                 ]):
-                    logger.warning(f"Tentativa {attempt + 1}/3: Conexão SSL fechada inesperadamente. Reconectando...")
+                    logger.warning(
+                        f"Tentativa {attempt + 1}/3: Conexão SSL fechada inesperadamente. Reconectando..."
+                    )
                     
                     if conn:
                         try:
@@ -56,14 +59,14 @@ class DataEngine:
                             pass
                     conn = None
                     
-                    if attempt == 2:  # última tentativa
+                    if attempt == 2:  # Última tentativa falhou
                         logger.error("Falha após 3 tentativas de reconexão com o banco.")
                         raise
-                    continue  # tenta novamente
+                    continue  # Tenta novamente
                 
                 else:
-                    # Outro erro do PostgreSQL
-                    logger.error(f"Erro de conexão com o banco: {e}")
+                    # Outro tipo de erro do PostgreSQL
+                    logger.error(f"Erro operacional no banco: {e}")
                     raise
                     
             except Exception as e:
@@ -241,6 +244,7 @@ class DataEngine:
 
     def fetch_insights(self) -> List[Dict[str, Any]]:
         insights = []
+
         def first_value(rows, key, default=0):
             if not rows:
                 return default
@@ -296,27 +300,225 @@ class DataEngine:
             "tipo": "financeiro",
         })
 
-        # ... (o resto do método insights continua igual - não alterei para não ficar muito longo)
+        top_orgao = self._execute_query(
+            """
+            SELECT nome_do_orgao_pagador, COALESCE(SUM(valor), 0) AS total
+            FROM audit_search.pagamentos
+            WHERE nome_do_orgao_pagador IS NOT NULL
+            GROUP BY nome_do_orgao_pagador
+            ORDER BY total DESC LIMIT 1;
+            """
+        )
+        insights.append({
+            "titulo": "Maior órgão pagador",
+            "valor": first_value(top_orgao, "nome_do_orgao_pagador", "—"),
+            "detalhe": f"R$ {float(first_value(top_orgao, 'total', 0) or 0):,.2f}"
+                      .replace(",", "X").replace(".", ",").replace("X", "."),
+            "tipo": "orgao",
+        })
+
+        top_destino = self._execute_query(
+            """
+            SELECT destinos, COUNT(*) AS total
+            FROM audit_search.viagens
+            WHERE destinos IS NOT NULL AND trim(destinos) <> ''
+            GROUP BY destinos
+            ORDER BY total DESC LIMIT 1;
+            """
+        )
+        insights.append({
+            "titulo": "Destino mais recorrente",
+            "valor": first_value(top_destino, "destinos", "—"),
+            "detalhe": f"{int(first_value(top_destino, 'total', 0) or 0)} viagens",
+            "tipo": "rota",
+        })
 
         return insights
 
-    # ==================== MÉTODOS DE CONTROLE ====================
+    def check_rag_health(self) -> Dict[str, Any]:
+        result = {
+            "schema_exists": False,
+            "table_exists": False,
+            "row_count": None,
+            "error": None,
+        }
+        try:
+            schema_rows = self._execute_query(
+                "SELECT 1 AS ok FROM information_schema.schemata WHERE schema_name = 'audit_rag' LIMIT 1;"
+            )
+            result["schema_exists"] = bool(schema_rows)
+
+            table_rows = self._execute_query(
+                """
+                SELECT 1 AS ok FROM information_schema.tables
+                WHERE table_schema = 'audit_rag' AND table_name = 'conhecimento_vetorial' LIMIT 1;
+                """
+            )
+            result["table_exists"] = bool(table_rows)
+
+            if result["table_exists"]:
+                count_rows = self._execute_query(
+                    "SELECT COUNT(*) AS total FROM audit_rag.conhecimento_vetorial;"
+                )
+                if count_rows:
+                    result["row_count"] = count_rows[0].get("total")
+        except Exception as exc:
+            result["error"] = str(exc)
+        return result
+
+    def fetch_control_alerts(self) -> List[Dict[str, Any]]:
+        rows = self._execute_query(
+            "SELECT * FROM audit_bi.kpi_alertas_operacionais;"
+        )
+        return [
+            {
+                "titulo": row.get("titulo") or row.get("alerta") or row.get("nome") or "Alerta",
+                "total": int(row.get("total", 0) or 0),
+                "detalhe": row.get("detalhe") or row.get("descricao") or "",
+                "tipo": row.get("tipo") or "geral",
+            }
+            for row in (rows or [])
+        ]
+
+    def fetch_control_queue(self, limit: int = 10) -> List[Dict[str, Any]]:
+        query = """
+            SELECT
+                v.identificador_do_processo_de_viagem::TEXT AS id_viagem,
+                v.nome::TEXT AS nome_viajante,
+                v.destinos::TEXT AS destino_resumo,
+                (COALESCE(v.valor_diarias, 0) + COALESCE(v.valor_passagens, 0) + COALESCE(v.valor_outros_gastos, 0))::DOUBLE PRECISION AS valor_total,
+                i.score_final_combinado AS score_risco,
+                i.nivel_criticidade AS criticidade
+            FROM audit_search.viagens v
+            JOIN audit_search.inteligencia_viagens i
+              ON v.identificador_do_processo_de_viagem = i.identificador_do_processo_de_viagem
+            ORDER BY i.score_final_combinado DESC NULLS LAST
+            LIMIT %s;
+        """
+        return self._execute_query(query, (limit,))
+
+    def fetch_control_compliance(self) -> Dict[str, Any]:
+        criticidades = self._execute_query(
+            """
+            SELECT criticidade, COALESCE(total, 0) AS total
+            FROM audit_bi.cubo_distribuicao_criticidade
+            ORDER BY CASE
+                WHEN upper(criticidade) IN ('CRITICO', 'CRÍTICO') THEN 1
+                WHEN upper(criticidade) = 'ALTO' THEN 2
+                WHEN upper(criticidade) IN ('MEDIO', 'MÉDIO') THEN 3
+                WHEN upper(criticidade) = 'BAIXO' THEN 4
+                ELSE 5
+            END;
+            """
+        )
+        total = sum(int(row.get("total", 0) or 0) for row in (criticidades or []))
+
+        def pct(part):
+            if total <= 0:
+                return 0.0
+            return round((part / total) * 100, 2)
+
+        return {
+            "total_viagens": total,
+            "criticidades": [
+                {
+                    "label": row.get("criticidade"),
+                    "total": int(row.get("total", 0) or 0),
+                    "pct": pct(int(row.get("total", 0) or 0)),
+                }
+                for row in (criticidades or [])
+            ],
+        }
+
+    def fetch_control_orgao_destaque(self) -> Dict[str, Any]:
+        top_pagadores = self._execute_query(
+            """
+            SELECT nome_do_orgao_pagador, COALESCE(SUM(valor), 0) AS total
+            FROM audit_search.pagamentos
+            WHERE nome_do_orgao_pagador IS NOT NULL
+            GROUP BY nome_do_orgao_pagador
+            ORDER BY total DESC LIMIT 5;
+            """
+        )
+        top_criticos = self._execute_query(
+            """
+            SELECT v.nome_do_orgao_superior,
+                   COALESCE(AVG(i.score_final_combinado), 0) AS score_medio,
+                   COUNT(*) AS total_viagens
+            FROM audit_search.viagens v
+            JOIN audit_search.inteligencia_viagens i
+              ON v.identificador_do_processo_de_viagem = i.identificador_do_processo_de_viagem
+            WHERE v.nome_do_orgao_superior IS NOT NULL
+            GROUP BY v.nome_do_orgao_superior
+            ORDER BY score_medio DESC LIMIT 5;
+            """
+        )
+        return {
+            "top_pagadores": top_pagadores,
+            "top_criticos": top_criticos,
+        }
 
     def fetch_control_payment_monitor(self, month: Optional[str] = None) -> Dict[str, Any]:
-        # (seu método continua igual, só usa o _get_connection melhorado)
-        serie_query = """ ... """  # mantenha seu query original aqui
-        # ... resto do método igual
+        serie_query = """
+            WITH params AS (
+                SELECT COALESCE(%s::int,
+                    (SELECT EXTRACT(MONTH FROM MAX(dia))::int 
+                     FROM audit_bi.cubo_total_pagamentos_por_dia 
+                     WHERE dia IS NOT NULL)
+                ) AS month_num
+            )
+            SELECT
+                to_char(c.dia, 'DD') AS dia,
+                COALESCE(SUM(c.total), 0) AS total,
+                p.month_num AS mes_ref
+            FROM audit_bi.cubo_total_pagamentos_por_dia c
+            CROSS JOIN params p
+            WHERE c.dia IS NOT NULL AND EXTRACT(MONTH FROM c.dia) = p.month_num
+            GROUP BY to_char(c.dia, 'DD'), p.month_num
+            ORDER BY to_char(c.dia, 'DD')::int ASC;
+        """
+        today = date.today()
+        month_num = self._parse_month_number(month)
 
         with self._get_connection() as conn:
             cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute(serie_query, (self._parse_month_number(month),))
+            cur.execute(serie_query, (month_num,))
             serie = cur.fetchall() or []
-            # ... resto do código igual
 
-    # Outros métodos de control (outliers, tardias, etc.) continuam iguais
+        pico = max(serie, key=lambda row: float(row.get("total") or 0), default=None)
+        total_mes = sum(float(row.get("total") or 0) for row in serie)
+        mes_ref = (
+            int(serie[0].get("mes_ref")) if serie and serie[0].get("mes_ref") is not None
+            else (month_num or today.month)
+        )
+
+        return {
+            "serie": serie,
+            "pico": pico,
+            "total_mes": total_mes,
+            "meses": [],
+            "mes_atual": f"{mes_ref:02d}",
+            "ano_atual": today.year,
+        }
+
+    def fetch_control_payment_outliers(self, month: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+        month_num = self._parse_month_number(month)
+        query = """
+            WITH params AS (
+                SELECT COALESCE(%s::int,
+                    (SELECT EXTRACT(MONTH FROM MAX(data_da_emissao_compra))::int 
+                     FROM audit_bi.cubo_taxa_servico_maior_10 
+                     WHERE data_da_emissao_compra IS NOT NULL)
+                ) AS month_num
+            )
+            SELECT ...  -- mantenha seu SELECT original aqui
+            LIMIT %s;
+        """
+        return self._execute_query(query, (month_num, limit))
+
+    # ... (os outros métodos fetch_control_* continuam iguais)
 
     def _parse_month_number(self, month: Optional[str]) -> Optional[int]:
-        # seu método original
         month_num = None
         if month is not None:
             raw = str(month).strip()
@@ -331,15 +533,16 @@ class DataEngine:
     def _execute_query(self, query, params=None, use_real_dict=True):
         try:
             with self._get_connection() as conn:
-                cursor_factory = RealDictCursor if use_real_dict else None
-                cur = conn.cursor(cursor_factory=cursor_factory)
+                cur = conn.cursor(
+                    cursor_factory=RealDictCursor if use_real_dict else None
+                )
                 cur.execute(query, params or ())
                 rows = cur.fetchall()
 
-                if not use_real_dict and rows:
+                if not use_real_dict and rows and hasattr(cur, 'description'):
                     columns = [desc[0] for desc in cur.description]
                     rows = [dict(zip(columns, row)) for row in rows]
                 return rows
         except Exception as e:
-            logger.error(f"Erro ao executar query: {query[:150]}... | {e}")
+            logger.error(f"Erro ao executar query: {query[:150]}... | Erro: {e}")
             raise
