@@ -86,3 +86,19 @@ Este repositório é a interface de usuário de um pipeline maior de engenharia 
     Audit-BI: Modelagem de cubos analíticos e métricas de risco.
 
 Desenvolvido por Rogério Oliveira Engenheiro de Dados & Desenvolvedor Fullstack com foco em soluções de alta performance.
+
+## 🖼️ Interface do Sistema
+
+Abaixo, algumas capturas de tela do sistema em operação, demonstrando a interface reativa e os módulos de análise.
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="48%" alt="Página Inicial e Dashboard" />
+  <img src="docs/screenshots/cards.png" width="48%" alt="Visualização de Cards de Auditoria" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/modal.png" width="48%" alt="Detalhes e Justificativas em Modal" />
+  <img src="docs/screenshots/image.png" width="48%" alt="Interface do Investigador IA" />
+</p>
+
+> **Nota:** As capturas acima mostram o fluxo desde o monitoramento de alto nível (KPIs) até a investigação profunda via RAG (Retrieval-Augmented Generation) com suporte de IA.
