@@ -40,10 +40,6 @@ export function renderModal(card) {
     ? 'Carregando...'
     : (viagem.motivo || 'Sem motivo informado');
 
-  const justificativaUrgencia = loading
-    ? 'Carregando...'
-    : (viagem.justificativa_urgencia_viagem || 'Sem justificativa');
-
   const inicioFmt = loading ? 'Carregando...' : formatarDataBR(viagem.periodo_data_de_inicio);
   const fimFmt = loading ? 'Carregando...' : formatarDataBR(viagem.periodo_data_de_fim);
 
@@ -81,28 +77,6 @@ export function renderModal(card) {
 
   setText('card-data-inicio', `${inicioFmt} → ${fimFmt}`);
   setText('card-motivo-val', motivo);
-
-  const urgente = loading ? null : normalizeUrgente(viagem.viagem_urgente);
-  const urgenteEl = document.getElementById('card-urgente');
-  const urgenciaBox = document.getElementById('card-urgencia-box');
-  if (urgenteEl) {
-    if (urgente) {
-      urgenteEl.textContent = 'URGENTE';
-      urgenteEl.classList.remove('hidden');
-    } else {
-      urgenteEl.textContent = '';
-      urgenteEl.classList.add('hidden');
-    }
-  }
-  if (urgenciaBox) {
-    if (urgente) {
-      setText('card-justificativa-urgencia', justificativaUrgencia);
-      urgenciaBox.classList.remove('hidden');
-    } else {
-      setText('card-justificativa-urgencia', '');
-      urgenciaBox.classList.add('hidden');
-    }
-  }
 
   // Trecho: mostra todos os trechos (ou destinos)
   const trechoTxt = loading
