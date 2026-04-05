@@ -6,8 +6,8 @@ class EmbeddingModel:
     def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.model_name = model
         self.api_token = settings.hf_token
-        # Usamos o endpoint de inference direto para evitar o erro de roteamento
-        self.api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{self.model_name}"
+        # Endpoint obrigatório pelo roteamento novo da HF
+        self.api_url = f"https://router.huggingface.co/hf-inference/models/{self.model_name}"
 
     def encode(self, texto: str):
         if not self.api_token:
@@ -16,10 +16,12 @@ class EmbeddingModel:
 
         headers = {
             "Authorization": f"Bearer {self.api_token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-wait-for-model": "true",
+            # O "pulo do gato" para evitar o erro de 'sentences'
+            "x-use-pipeline": "feature-extraction" 
         }
         
-        # Enviamos apenas a string pura em "inputs"
         payload = {"inputs": texto}
 
         try:
@@ -29,10 +31,10 @@ class EmbeddingModel:
                 if response.status_code == 200:
                     result = response.json()
                     
-                    # Garante que estamos pegando a lista de floats simples
-                    # A API de feature-extraction pode retornar [[...]]
-                    if isinstance(result, list) and len(result) > 0:
-                        return result[0] if isinstance(result[0], list) else result
+                    # Garante que retornamos apenas a lista de floats [0.1, 0.2, ...]
+                    while isinstance(result, list) and len(result) > 0 and isinstance(result[0], list):
+                        result = result[0]
+                    
                     return result
                 else:
                     logger.error(f"Erro na API HF: {response.status_code} - {response.text}")
@@ -40,4 +42,5 @@ class EmbeddingModel:
                     
         except Exception as e:
             logger.error(f"Erro de conexão com Hugging Face: {str(e)}")
+            # Retorna vetor zerado (384 dim para o MiniLM) em caso de falha crítica
             return [0.0] * 384
